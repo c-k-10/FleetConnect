@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FleetConnect – Klickprototyp</title>
+<meta name="description" content="Klickprototyp FleetConnect: Leitstand für Disponenten, Fahrer-App, Chat mit automatischer Übersetzung und KI-Co-Disponent Winston mit Freigabeprinzip.">
+<style>
+:root {
+  --bg: #e9eef4;
+  --panel: #ffffff;
+  --panel-2: #f6f8fb;
+  --ink: #0f1b2a;
+  --muted: #5a6a7e;
+  --line: #dbe2ea;
+  --brand: #0b3d6e;
+  --brand-ink: #ffffff;
+  --blue: #1565c0;
+  --blue-bg: #e7f0fb;
+  --ok: #1b873b;
+  --ok-bg: #e5f4ea;
+  --pause: #6f7b8c;
+  --pause-bg: #eceff3;
+  --late: #c62828;
+  --late-bg: #fdecea;
+  --warn: #b26a00;
+  --warn-bg: #fff3dc;
+  --ai: #6246c1;
+  --ai-bg: #f1edfc;
+  --planned: #7b8597;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(15, 27, 42, .06), 0 4px 14px rgba(15, 27, 42, .06);
+  --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.45 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 3px solid #7fb2ee; outline-offset: 2px; }
+[hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Demo-Leiste ---------- */
+.demo-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+  padding: 10px 20px; background: var(--brand); color: var(--brand-ink);
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: .2px; }
+.brand svg { width: 28px; height: 28px; }
+.brand small { font-weight: 400; opacity: .75; font-size: 13px; }
+.demo-bar .spacer { flex: 1; }
+.seg { display: inline-flex; background: rgba(255,255,255,.12); border-radius: 9px; padding: 3px; }
+.seg button {
+  border: 0; background: transparent; color: #fff; padding: 6px 12px; border-radius: 7px; font-size: 13px;
+}
+.seg button[aria-pressed="true"] { background: #fff; color: var(--brand); font-weight: 600; }
+.demo-btn {
+  border: 1px solid rgba(255,255,255,.35); background: transparent; color: #fff;
+  padding: 7px 12px; border-radius: 9px; font-size: 13px; display: inline-flex; gap: 6px; align-items: center;
+}
+.demo-btn.primary { background: #ffb74d; border-color: #ffb74d; color: #3a2400; font-weight: 600; }
+.demo-btn:disabled { opacity: .55; }
+.demo-btn svg { width: 16px; height: 16px; }
+.howto { background: #fff8e6; border-bottom: 1px solid #f1dfb0; padding: 8px 20px; font-size: 13px; color: #5a4300; }
+.howto ol { margin: 0; padding-left: 18px; display: flex; flex-wrap: wrap; gap: 4px 22px; }
+.howto b { color: #3a2a00; }
+
+/* ---------- Bühne ---------- */
+.stage { display: grid; gap: 18px; padding: 18px 20px 28px; align-items: start; }
+.stage[data-view="both"] { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1500px) {
+  .stage[data-view="both"] { grid-template-columns: minmax(0, 1fr) 392px; }
+}
+.stage[data-view="ls"] .phone-wrap { display: none; }
+.stage[data-view="app"] .leitstand { display: none; }
+.stage[data-view="app"] { justify-items: center; }
+
+/* ---------- Leitstand ---------- */
+.leitstand { background: var(--panel); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; min-width: 0; }
+.ls-top {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+  padding: 12px 18px; border-bottom: 1px solid var(--line); background: var(--panel);
+}
+.ls-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.ls-title svg { width: 22px; height: 22px; color: var(--brand); }
+.ls-user { color: var(--muted); font-size: 13px; }
+.ls-top .spacer { flex: 1; }
+.clock { font-variant-numeric: tabular-nums; font-weight: 600; background: var(--panel-2); border: 1px solid var(--line); padding: 4px 10px; border-radius: 8px; }
+.lang { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.lang .opts { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.lang button { border: 0; background: #fff; padding: 4px 9px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.lang button + button { border-left: 1px solid var(--line); }
+.lang button[aria-pressed="true"] { background: var(--blue); color: #fff; }
+
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 14px 18px 0; }
+.kpi { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.kpi .v { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.kpi .l { font-size: 12px; color: var(--muted); }
+.kpi.late .v { color: var(--late); }
+.kpi.ai .v { color: var(--ai); }
+.kpi.flash { animation: flash 1.2s ease; }
+@keyframes flash { 0% { box-shadow: 0 0 0 0 rgba(21,101,192,.45); } 100% { box-shadow: 0 0 0 10px rgba(21,101,192,0); } }
+
+.ls-grid {
+  display: grid; gap: 14px; padding: 14px 18px 18px;
+  grid-template-columns: 290px minmax(300px, 1fr) 350px;
+  align-items: start;
+}
+@media (max-width: 1180px) {
+  .ls-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .col-map { grid-column: 1 / -1; order: -1; }
+}
+@media (max-width: 760px) {
+  .ls-grid { grid-template-columns: minmax(0, 1fr); }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.col { display: grid; gap: 14px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); min-width: 0; }
+.card > h3, .card-h {
+  margin: 0; padding: 10px 12px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted);
+  border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px;
+}
+.card-h .grow { flex: 1; }
+
+/* Tourliste */
+.tour-list { display: grid; }
+.tour {
+  display: grid; gap: 4px; padding: 10px 12px; border: 0; border-bottom: 1px solid var(--line); background: #fff; text-align: left; width: 100%;
+}
+.tour:last-child { border-bottom: 0; }
+.tour:hover { background: var(--panel-2); }
+.tour[aria-current="true"] { background: var(--blue-bg); box-shadow: inset 3px 0 0 var(--blue); }
+.tour .row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.tour .id { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tour .route { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tour .who { font-size: 13px; }
+.assign { display: flex; gap: 6px; align-items: center; margin-top: 2px; }
+.assign select { flex: 1; min-width: 0; padding: 5px 6px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+.btn {
+  border: 1px solid var(--line); background: #fff; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 13px;
+  display: inline-flex; align-items: center; gap: 6px; justify-content: center;
+}
+.btn:hover:not(:disabled) { background: var(--panel-2); }
+.btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+.btn.primary:hover:not(:disabled) { background: #0f58aa; }
+.btn.ai { background: var(--ai); border-color: var(--ai); color: #fff; }
+.btn.ai:hover:not(:disabled) { background: #5238ad; }
+.btn.ghost { background: transparent; }
+.btn:disabled { opacity: .5; }
+.btn svg { width: 15px; height: 15px; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.active { color: var(--ok); background: var(--ok-bg); }
+.pill.atstop { color: var(--blue); background: var(--blue-bg); }
+.pill.paused { color: var(--pause); background: var(--pause-bg); }
+.pill.planned { color: var(--planned); background: var(--pause-bg); }
+.pill.assigned { color: var(--blue); background: var(--blue-bg); }
+.pill.done { color: var(--muted); background: var(--pause-bg); }
+.pill.late { color: var(--late); background: var(--late-bg); }
+.pill.problem { color: var(--warn); background: var(--warn-bg); }
+.pill.nodot::before { display: none; }
+
+/* Karte */
+.map-box { position: relative; }
+#map { display: block; width: 100%; height: auto; background: #eef3ef; border-radius: 0 0 var(--radius) var(--radius); }
+.map-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 12px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); }
+.map-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.map-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.marker { cursor: pointer; }
+.marker .pulse { transform-box: fill-box; transform-origin: center; animation: pulse 2s ease-out infinite; }
+@keyframes pulse { 0% { transform: scale(.6); opacity: .55; } 100% { transform: scale(1.9); opacity: 0; } }
+.marker:focus { outline: none; }
+.marker:focus-visible .dot { stroke: #7fb2ee; stroke-width: 4; }
+.map-label { font: 600 11px var(--font); }
+.city-label { font: 11px var(--font); fill: #4c5a6b; }
+.river-label { font: italic 10px var(--font); fill: #5b8bb8; }
+.road-shield { font: 700 9px var(--font); fill: #fff; }
+
+/* Detail */
+.detail-head { padding: 12px; border-bottom: 1px solid var(--line); display: grid; gap: 6px; }
+.detail-head .t { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.detail-head .t b { font-size: 16px; }
+.detail-head .meta { color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.tabs { display: flex; border-bottom: 1px solid var(--line); }
+.tabs button {
+  flex: 1; border: 0; background: #fff; padding: 9px 6px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; position: relative;
+}
+.tabs button[aria-selected="true"] { color: var(--blue); border-bottom-color: var(--blue); }
+.badge-count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--late); color: #fff; font-size: 11px; margin-left: 4px; }
+.panel-body { padding: 10px 12px 12px; }
+.stops { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.stop { display: grid; grid-template-columns: 22px 1fr; gap: 8px; position: relative; padding-bottom: 12px; }
+.stop:not(:last-child)::after { content: ""; position: absolute; left: 10px; top: 22px; bottom: 0; width: 2px; background: var(--line); }
+.stop .n { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; background: var(--pause-bg); color: var(--muted); z-index: 1; }
+.stop.done .n { background: var(--ok); color: #fff; }
+.stop.next .n { background: var(--blue); color: #fff; }
+.stop .name { font-weight: 600; }
+.stop .sub { color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.stop .sub .late { color: var(--late); font-weight: 600; }
+.history { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.history li { display: grid; grid-template-columns: 44px 1fr; gap: 8px; font-size: 13px; }
+.history time { color: var(--muted); font-variant-numeric: tabular-nums; }
+.history .src { font-size: 11px; color: var(--muted); }
+.history li.new { animation: newrow 1.6s ease; border-radius: 6px; }
+@keyframes newrow { from { background: #fff3c4; } to { background: transparent; } }
+
+/* Chat */
+.chat { display: grid; grid-template-rows: minmax(0, 1fr) auto auto; min-height: 0; }
+.messages { display: flex; flex-direction: column; gap: 10px; padding: 12px; overflow-y: auto; background: var(--panel-2); }
+.leitstand .messages { height: 300px; }
+.msg { display: grid; gap: 3px; max-width: 86%; }
+.msg.me { justify-self: end; align-self: flex-end; justify-items: end; }
+.msg.them { align-self: flex-start; }
+.bubble { padding: 8px 11px; border-radius: 14px; background: #fff; border: 1px solid var(--line); white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.me .bubble { background: var(--blue); border-color: var(--blue); color: #fff; }
+.msg.ai .bubble { background: var(--ai-bg); border-color: #d9d0f5; color: var(--ink); }
+.msg.me.ai .bubble { background: var(--ai); border-color: var(--ai); color: #fff; }
+.msg .meta { font-size: 11px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--blue); font-size: 11px; font-weight: 600; text-decoration: underline; }
+.quick { display: flex; gap: 6px; overflow-x: auto; padding: 8px 12px 0; scrollbar-width: thin; }
+.chip { flex: none; border: 1px solid var(--line); background: #fff; padding: 5px 10px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+.chip:hover { background: var(--blue-bg); border-color: #b7cff0; }
+.composer { display: flex; gap: 6px; padding: 8px 12px 12px; }
+.composer input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: #fff; }
+
+/* Winston */
+.winston .card-h { color: var(--ai); }
+.winston .card-h svg { width: 16px; height: 16px; }
+.w-body { padding: 10px 12px 12px; display: grid; gap: 10px; }
+.w-idle { color: var(--muted); font-size: 13px; display: flex; gap: 8px; align-items: flex-start; }
+.w-idle svg { width: 16px; height: 16px; flex: none; color: var(--ai); margin-top: 2px; }
+.w-log li span, .w-idle span { min-width: 0; overflow-wrap: anywhere; }
+.w-thinking { display: flex; align-items: center; gap: 8px; color: var(--ai); font-weight: 600; font-size: 13px; }
+.dots span { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ai); margin-right: 3px; animation: bounce 1s infinite; }
+.dots span:nth-child(2) { animation-delay: .15s; } .dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%, 80%, 100% { transform: translateY(0); opacity: .5; } 40% { transform: translateY(-4px); opacity: 1; } }
+.proposal { border: 1px solid #d9d0f5; background: var(--ai-bg); border-radius: 10px; padding: 10px; display: grid; gap: 8px; animation: slidein .35s ease; }
+@keyframes slidein { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
+.proposal .ph { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--late); }
+.proposal .ph svg { width: 16px; height: 16px; }
+.proposal .reason { font-size: 12px; color: var(--ink); }
+.p-item { background: #fff; border: 1px solid #e3dcf7; border-radius: 8px; padding: 8px; display: grid; gap: 4px; }
+.p-to { font-size: 11px; font-weight: 700; color: var(--ai); text-transform: uppercase; letter-spacing: .4px; }
+.p-text { font-size: 13px; white-space: pre-wrap; max-height: 150px; overflow-y: auto; }
+.p-item textarea { width: 100%; min-height: 90px; border: 1px solid var(--line); border-radius: 6px; padding: 6px; resize: vertical; }
+.p-note { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #4a3a8a; }
+.p-note svg { width: 14px; height: 14px; }
+.p-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.w-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 12px; color: var(--muted); }
+.w-log li { display: flex; gap: 6px; align-items: flex-start; }
+.w-log svg { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+.w-log .ok { color: var(--ok); } .w-log .no { color: var(--late); }
+
+/* Toast Leitstand */
+.ls-toast {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; z-index: 50; display: grid; justify-items: center; gap: 8px; pointer-events: none;
+}
+.ls-toast div {
+  background: #0f1b2a; color: #fff; padding: 9px 12px; border-radius: 10px; box-shadow: var(--shadow); font-size: 13px;
+  animation: toast 4s ease forwards; max-width: 360px;
+}
+.ls-toast small { color: #9fb3c8; display: block; }
+@keyframes toast { 0% { opacity: 0; transform: translateY(8px); } 8%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+
+/* ---------- Fahrer-App ---------- */
+.phone-wrap { display: grid; justify-items: center; gap: 8px; position: sticky; top: 12px; }
+.phone-caption { font-size: 12px; color: var(--muted); text-align: center; }
+.phone {
+  width: 372px; max-width: calc(100vw - 32px); height: 770px; background: #0f1b2a; border-radius: 44px; padding: 12px;
+  box-shadow: 0 20px 50px rgba(15,27,42,.25); position: relative;
+}
+.screen { background: #f3f5f8; border-radius: 34px; height: 100%; overflow: hidden; display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; position: relative; font-size: 15px; }
+.sbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 22px 4px; font-size: 13px; font-weight: 600; background: var(--brand); color: #fff; }
+.sbar .notch { width: 90px; height: 22px; background: #0f1b2a; border-radius: 12px; }
+.sbar .icons { display: flex; gap: 5px; align-items: center; }
+.sbar .icons i { display: block; width: 3px; background: #fff; border-radius: 1px; }
+.app-head { background: var(--brand); color: #fff; padding: 6px 16px 12px; display: grid; gap: 8px; }
+.app-head .r1 { display: flex; align-items: center; gap: 8px; }
+.app-head .r1 b { font-size: 16px; }
+.app-head .r1 .grow { flex: 1; }
+.app-head .lang button { background: transparent; color: #cfe0f3; }
+.app-head .lang .opts { border-color: rgba(255,255,255,.3); }
+.app-head .lang button + button { border-left-color: rgba(255,255,255,.3); }
+.app-head .lang button[aria-pressed="true"] { background: #fff; color: var(--brand); }
+.gps { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px 10px; border-radius: 9px; background: rgba(255,255,255,.12); }
+.gps .led { width: 9px; height: 9px; border-radius: 50%; background: #56d37c; box-shadow: 0 0 0 3px rgba(86,211,124,.25); }
+.gps.off .led { background: #9aa6b5; box-shadow: none; }
+.app-banner { background: #fff3c4; color: #4d3b00; padding: 9px 16px; font-size: 13px; font-weight: 600; display: flex; gap: 8px; align-items: center; animation: slidein .35s ease; }
+.app-banner svg { width: 16px; height: 16px; flex: none; }
+.app-body { overflow-y: auto; min-height: 0; }
+.app-pad { padding: 14px; display: grid; gap: 12px; }
+.a-card { background: #fff; border-radius: 16px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(15,27,42,.06); display: grid; gap: 6px; }
+.a-card .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 700; }
+.a-card .big { font-size: 18px; font-weight: 700; line-height: 1.25; }
+.a-card .kv { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
+.a-card .kv b { color: var(--ink); }
+.a-card .kv .late { color: var(--late); }
+.status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sbtn {
+  min-height: 64px; border-radius: 14px; border: 0; background: #fff; box-shadow: 0 1px 2px rgba(15,27,42,.08), inset 0 0 0 1px var(--line);
+  display: grid; justify-items: center; align-content: center; gap: 4px; font-weight: 700; font-size: 15px; padding: 8px;
+}
+.sbtn svg { width: 24px; height: 24px; }
+.sbtn:not(:disabled):active { transform: scale(.98); }
+.sbtn.go { background: var(--ok); color: #fff; box-shadow: none; }
+.sbtn.arrive { background: var(--blue); color: #fff; box-shadow: none; }
+.sbtn.unload { background: #0d7a8a; color: #fff; box-shadow: none; }
+.sbtn.pause { background: #fff; color: var(--pause); }
+.sbtn.resume { background: var(--ok); color: #fff; box-shadow: none; }
+.sbtn.problem { background: #fff; color: var(--warn); }
+.sbtn.finish { background: #fff; color: var(--ink); }
+.sbtn:disabled { background: #e9edf2; color: #9aa6b5; box-shadow: none; }
+.a-hint { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: flex-start; }
+.a-hint svg { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+.a-stops { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.a-stops li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; font-size: 14px; }
+.a-stops .n { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; background: var(--pause-bg); color: var(--muted); }
+.a-stops .done .n { background: var(--ok); color: #fff; }
+.a-stops .next .n { background: var(--blue); color: #fff; }
+.a-stops small { display: block; color: var(--muted); font-size: 12px; }
+.app-tabs { display: grid; grid-template-columns: 1fr 1fr; background: #fff; border-top: 1px solid var(--line); padding-bottom: 10px; }
+.app-tabs button { border: 0; background: #fff; padding: 10px 6px 6px; display: grid; justify-items: center; gap: 2px; font-size: 12px; font-weight: 600; color: var(--muted); position: relative; }
+.app-tabs button svg { width: 22px; height: 22px; }
+.app-tabs button[aria-selected="true"] { color: var(--blue); }
+.app-tabs .dot { position: absolute; top: 8px; left: calc(50% + 8px); width: 9px; height: 9px; background: var(--late); border-radius: 50%; }
+.app-chat { display: grid; grid-template-rows: minmax(0, 1fr) auto auto; height: 100%; min-height: 0; }
+.app-chat .messages { background: #f3f5f8; }
+.app-chat .composer input { border-radius: 20px; padding: 10px 14px; }
+.app-chat .composer .btn { border-radius: 20px; }
+.sheet-backdrop { position: absolute; inset: 0; background: rgba(15,27,42,.35); display: grid; align-items: end; z-index: 5; }
+.sheet { background: #fff; border-radius: 22px 22px 0 0; padding: 16px; display: grid; gap: 10px; animation: slideup .25s ease; }
+@keyframes slideup { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
+.sheet h4 { margin: 0 0 4px; font-size: 16px; }
+.sheet .opt { min-height: 50px; border: 1px solid var(--line); border-radius: 12px; background: #fff; text-align: left; padding: 10px 14px; font-weight: 600; display: flex; gap: 10px; align-items: center; }
+.sheet .opt svg { width: 20px; height: 20px; color: var(--warn); }
+.app-toast {
+  position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); background: #0f1b2a; color: #fff; padding: 9px 14px; border-radius: 12px;
+  font-size: 14px; font-weight: 600; display: flex; gap: 8px; align-items: center; z-index: 6; white-space: nowrap; animation: toast 2.6s ease forwards;
+}
+.app-toast svg { width: 18px; height: 18px; color: #56d37c; }
+.done-card { text-align: center; padding: 20px 14px; }
+.done-card svg { width: 44px; height: 44px; color: var(--ok); margin: 0 auto; }
+
+footer { padding: 0 20px 24px; color: var(--muted); font-size: 12px; text-align: center; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-truck" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M2 6h11v10H2zM13 9h4l4 4v3h-8z"/><circle cx="6" cy="17.5" r="2" fill="#fff" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="17.5" r="2" fill="#fff" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5" fill="currentColor"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7 4.5v15l12.5-7.5z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1" fill="currentColor"/><rect x="14" y="4.5" width="4" height="15" rx="1" fill="currentColor"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5zM3 7.5l9 4.5 9-4.5M12 12v9"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 3 2 20h20z"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 9.5v5"/><circle cx="12" cy="17.3" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 21V4m0 0h11l-2 4 2 4H5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 5h16v11H9l-5 4z"/></symbol>
+    <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="6" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.5l2.2 6.6 6.8 2.4-6.8 2.4L12 21.5l-2.2-7.6L3 11.5l6.8-2.4z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M10 21h4"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="m3.5 6.5 8.5 7 8.5-7"/></symbol>
+    <symbol id="i-jam" viewBox="0 0 24 24"><rect x="3" y="7" width="8" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13" y="11" width="8" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-wrench" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M14.5 5.5a4 4 0 0 0 4.9 4.9L21 12l-9 9-3-3 9-9-1.6-1.6a4 4 0 0 1-4.9-4.9z"/></symbol>
+  </defs>
+</svg>
+
+<header class="demo-bar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#ffb74d"/><path d="M7 19V12h10v7M17 14.5h4l3 3V19h-7" fill="none" stroke="#0b3d6e" stroke-width="2.2" stroke-linejoin="round"/><circle cx="11" cy="21" r="2" fill="#0b3d6e"/><circle cx="21" cy="21" r="2" fill="#0b3d6e"/></svg>
+    <span>FleetConnect <small>Klickprototyp · Stand 15.09.2026</small></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="seg" role="group" aria-label="Ansicht">
+    <button type="button" data-view="both" aria-pressed="true">Beide</button>
+    <button type="button" data-view="ls" aria-pressed="false">Leitstand</button>
+    <button type="button" data-view="app" aria-pressed="false">Fahrer-App</button>
+  </div>
+  <button type="button" class="demo-btn primary" id="btnJam"><svg><use href="#i-jam"/></svg>Stau auf der A9 auslösen</button>
+  <button type="button" class="demo-btn" id="btnReset"><svg><use href="#i-reset"/></svg>Zurücksetzen</button>
+</header>
+<div class="howto">
+  <ol>
+    <li><b>Status melden:</b> In der Fahrer-App auf „Na miejscu“, „Przerwa“ usw. tippen – der Leitstand aktualisiert sich sofort.</li>
+    <li><b>Übersetzung:</b> Im Chat schreibt der Disponent Deutsch, Tomasz liest Polnisch. „Original anzeigen“ zeigt den Ausgangstext.</li>
+    <li><b>Winston:</b> „Stau auf der A9 auslösen“ – Winston erkennt die Verspätung und schlägt Nachrichten vor. Gesendet wird erst nach Freigabe.</li>
+    <li><b>Sprache:</b> Leitstand und App lassen sich getrennt auf DE, EN oder PL umstellen.</li>
+  </ol>
+</div>
+
+<main class="stage" id="stage" data-view="both">
+  <section class="leitstand" aria-labelledby="lsTitle">
+    <div class="ls-top">
+      <div class="ls-title" id="lsTitle"><svg><use href="#i-route"/></svg><span data-i18n-ls="leitstand">Leitstand</span></div>
+      <div class="ls-user">Markus Reinhardt · <span data-i18n-ls="role_disp">Disponent</span> · Bachmann Transporte</div>
+      <div class="spacer"></div>
+      <div class="lang" data-side="ls"><span data-i18n-ls="language">Sprache</span><span class="opts"></span></div>
+      <div class="clock" id="lsClock" aria-live="off">10:40</div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="ls-grid">
+      <div class="col">
+        <div class="card">
+          <div class="card-h"><span data-i18n-ls="tours_today">Touren heute</span></div>
+          <div class="tour-list" id="tourList"></div>
+        </div>
+        <div class="card winston" id="winstonCard">
+          <div class="card-h"><svg><use href="#i-spark"/></svg><span class="grow" data-i18n-ls="winston_title">Winston · KI-Co-Disponent</span></div>
+          <div class="w-body" id="winston" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="col col-map">
+        <div class="card map-box">
+          <div class="card-h"><span class="grow" data-i18n-ls="map">Live-Karte</span><span style="text-transform:none;font-weight:600;letter-spacing:0" data-i18n-ls="map_hint">nur Fahrer mit aktiver Tour</span></div>
+          <svg id="map" role="img" aria-label="Live-Karte"></svg>
+          <div class="map-legend" id="mapLegend"></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card" id="detailCard">
+          <div class="detail-head" id="detailHead"></div>
+          <div class="tabs" role="tablist" id="lsTabs">
+            <button type="button" role="tab" data-tab="stops" aria-selected="true" data-i18n-ls="tab_stops">Stopps</button>
+            <button type="button" role="tab" data-tab="history" aria-selected="false" data-i18n-ls="tab_history">Verlauf</button>
+            <button type="button" role="tab" data-tab="chat" aria-selected="false"><span data-i18n-ls="tab_chat">Chat</span><span class="badge-count" id="lsUnread" hidden>0</span></button>
+          </div>
+          <div id="lsStops" class="panel-body"></div>
+          <div id="lsHistory" class="panel-body" hidden></div>
+          <div id="lsChat" class="chat" hidden>
+            <div class="messages" id="lsMessages" aria-live="polite"></div>
+            <div class="quick" id="lsQuick"></div>
+            <form class="composer" id="lsForm" autocomplete="off">
+              <label class="sr-only" for="lsInput">Nachricht</label>
+              <input id="lsInput" type="text">
+              <button class="btn primary" type="submit" data-i18n-ls="send">Senden</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="phone-wrap" aria-label="Fahrer-App">
+    <div class="phone">
+      <div class="screen" id="screen">
+        <div class="sbar"><span id="appClock">10:40</span><span class="notch" aria-hidden="true"></span><span class="icons" aria-hidden="true"><i style="height:5px"></i><i style="height:8px"></i><i style="height:11px"></i><i style="height:14px"></i></span></div>
+        <div class="app-head">
+          <div class="r1"><svg width="22" height="22" aria-hidden="true"><use href="#i-truck"/></svg><b>Tomasz Nowak</b><span class="grow"></span><div class="lang" data-side="app"><span class="opts"></span></div></div>
+          <div class="gps" id="gps"><span class="led"></span><span id="gpsText"></span></div>
+        </div>
+        <div id="appBanner" class="app-banner" hidden></div>
+        <div class="app-body" id="appBody">
+          <div id="appTour"></div>
+          <div id="appChat" class="app-chat" hidden>
+            <div class="messages" id="appMessages" aria-live="polite"></div>
+            <div class="quick" id="appQuick"></div>
+            <form class="composer" id="appForm" autocomplete="off">
+              <label class="sr-only" for="appInput">Wiadomość</label>
+              <input id="appInput" type="text">
+              <button class="btn primary" type="submit" id="appSend">Wyślij</button>
+            </form>
+          </div>
+        </div>
+        <nav class="app-tabs" role="tablist">
+          <button type="button" role="tab" data-atab="tour" aria-selected="true"><svg><use href="#i-route"/></svg><span data-i18n-app="tab_tour">Trasa</span></button>
+          <button type="button" role="tab" data-atab="chat" aria-selected="false"><svg><use href="#i-chat"/></svg><span data-i18n-app="tab_chat">Czat</span><span class="dot" id="appUnread" hidden></span></button>
+        </nav>
+        <div id="sheet" class="sheet-backdrop" hidden></div>
+        <div id="appToastHost"></div>
+      </div>
+    </div>
+    <div class="phone-caption">Fahrer-App von Tomasz Nowak (Muttersprache Polnisch) · Tour T-1042</div>
+  </section>
+</main>
+<div class="ls-toast" id="lsToast" aria-live="polite"></div>
+<footer>FleetConnect · Prototyp für die Projektarbeit an der Rudolf-Diesel-Fachschule · Alle Firmen, Personen und Touren sind fiktiv · Übersetzungen sind im Prototyp nur für Vorlagen hinterlegt.</footer>
+<script>
+(() => {
+'use strict';
+
+/* =========================================================
+   1. Texte der Oberfläche (DE / EN / PL)
+   ========================================================= */
+const L = {
+  de: {
+    leitstand: 'Leitstand', role_disp: 'Disponent', language: 'Sprache',
+    kpi_active: 'Aktive Touren', kpi_pause: 'In Pause', kpi_delay: 'Verspätungen', kpi_ai: 'Offene Vorschläge',
+    tours_today: 'Touren heute', map: 'Live-Karte', map_hint: 'nur Fahrer mit aktiver Tour',
+    tab_stops: 'Stopps', tab_history: 'Verlauf', tab_chat: 'Chat', send: 'Senden', type_msg: 'Nachricht schreiben …',
+    st_planned: 'geplant', st_assigned: 'zugewiesen', st_active: 'unterwegs', st_atstop: 'am Stopp',
+    st_paused: 'Pause · Ortung aus', st_done: 'abgeschlossen', st_problem: 'Problem', late: 'Verspätung +{m} min',
+    driver: 'Fahrer', vehicle: 'Fahrzeug', unassigned: 'noch kein Fahrer', choose_driver: 'Fahrer wählen …', assign: 'Zuweisen',
+    window: 'Zeitfenster {w}', eta: 'ETA {t}', arrived_at: 'angekommen {t}', unloaded_at: 'entladen {t}', departed_at: 'Abfahrt {t}',
+    open: 'offen', pos_age: 'Position vor {s} s', pos_last: 'letzte Position {t}', pos_none: 'keine Ortung',
+    no_history: 'Noch keine Meldungen.', src_drv: 'Fahrer-App', src_disp: 'Leitstand', src_winston: 'Winston', src_system: 'Verkehrsdienst',
+    translated: 'übersetzt · Original {l}', show_orig: 'Original anzeigen', show_trans: 'Übersetzung anzeigen',
+    not_translated: 'Freitext · im Prototyp nicht übersetzt', from_winston: 'Vorschlag von Winston, freigegeben',
+    winston_title: 'Winston · KI-Co-Disponent',
+    w_idle: 'Keine offenen Vorschläge. Winston prüft laufend die ETA aller aktiven Touren.',
+    w_thinking: 'Winston prüft die Tourlage …', w_detected: 'Verspätung erkannt · {id}',
+    w_reason: 'ETA {eta} für {stop} liegt {m} min nach dem Zeitfenster {win}.',
+    w_to_customer: 'An Kunde · E-Mail · Deutsch', w_to_driver: 'An Fahrer · Chat · wird automatisch übersetzt ({l})',
+    w_note: 'Wird erst nach deiner Freigabe gesendet.', approve: 'Freigeben & senden', edit: 'Bearbeiten', apply: 'Übernehmen', discard: 'Verwerfen',
+    log_title: 'Protokoll',
+    log_ok: '{t} · freigegeben von Markus Reinhardt · E-Mail an {cust} und Chat an {drv} gesendet',
+    log_no: '{t} · verworfen von Markus Reinhardt · nichts gesendet',
+    toast_received: 'im Leitstand nach {s} s', toast_assigned: '{id} an {drv} zugewiesen', toast_push: 'an die Fahrer-App gesendet',
+    toast_msg: 'Neue Nachricht von {drv}', toast_winston: 'Winston hat einen Vorschlag', toast_mail: 'E-Mail an {cust} gesendet',
+    toast_jam: 'Verkehrsmeldung: Stau auf der A9', toast_jam_no: 'Stau-Szenario geht nur, solange T-1042 unterwegs ist.',
+    legend_active: 'unterwegs', legend_stop: 'am Stopp', legend_pause: 'Pause – keine Ortung', legend_jam: 'Stau', legend_note: 'Karte schematisch',
+    depot: 'Depot', h_ABFAHRT: 'Abfahrt', h_ANGEKOMMEN: 'Angekommen', h_ENTLADEN: 'Entladen', h_PAUSE: 'Pause – Ortung aus',
+    h_WEITER: 'Weiterfahrt – Ortung an', h_PROBLEM: 'Problem gemeldet: {c}', h_BEENDET: 'Tour beendet – Ortung aus', h_ZUGEWIESEN: 'zugewiesen an {drv}',
+    h_STAU: 'Stau auf der A9 gemeldet', h_W_DETECTED: 'Verspätung erkannt, neue ETA {eta}', h_W_APPROVED: 'Vorschlag freigegeben und gesendet', h_W_DISCARDED: 'Vorschlag verworfen',
+    c_jam: 'Stau', c_ramp: 'Rampe belegt', c_breakdown: 'Panne',
+    tab_tour: 'Tour', my_tour: 'Meine Tour', next_stop_lbl: 'Nächster Stopp', current_stop: 'Aktueller Stopp',
+    report: 'Status melden – ein Tipp genügt', b_depart: 'Abfahrt', b_arrived: 'Angekommen', b_unloaded: 'Entladen', b_pause: 'Pause',
+    b_resume: 'Weiterfahren', b_problem: 'Problem', b_finish: 'Tour beenden',
+    gps_on: 'Ortung an – nur während der Tour', gps_pause: 'Pause – Ortung aus', gps_off: 'Ortung aus',
+    hint_pause: 'In der Pause wird deine Position nicht übertragen.', hint_active: 'Deine Position wird nur während der Tour übertragen.',
+    stops_lbl: 'Alle Stopps', more_tours: 'Weitere Touren', sent: 'Gemeldet', problem_q: 'Was ist passiert?', cancel: 'Abbrechen',
+    new_tour: 'Neue Tour zugewiesen: {id} · {route}', new_msg: 'Neue Nachricht vom Disponenten', tour_done: 'Tour abgeschlossen. Gute Heimfahrt!',
+    dispatcher: 'Disponent'
+  },
+  en: {
+    leitstand: 'Dispatch centre', role_disp: 'Dispatcher', language: 'Language',
+    kpi_active: 'Active tours', kpi_pause: 'On a break', kpi_delay: 'Delays', kpi_ai: 'Open suggestions',
+    tours_today: 'Today’s tours', map: 'Live map', map_hint: 'only drivers on an active tour',
+    tab_stops: 'Stops', tab_history: 'History', tab_chat: 'Chat', send: 'Send', type_msg: 'Write a message …',
+    st_planned: 'planned', st_assigned: 'assigned', st_active: 'on the road', st_atstop: 'at stop',
+    st_paused: 'Break · tracking off', st_done: 'completed', st_problem: 'Problem', late: 'Delay +{m} min',
+    driver: 'Driver', vehicle: 'Vehicle', unassigned: 'no driver yet', choose_driver: 'Choose driver …', assign: 'Assign',
+    window: 'Time window {w}', eta: 'ETA {t}', arrived_at: 'arrived {t}', unloaded_at: 'unloaded {t}', departed_at: 'departed {t}',
+    open: 'pending', pos_age: 'position {s} s ago', pos_last: 'last position {t}', pos_none: 'no tracking',
+    no_history: 'No reports yet.', src_drv: 'Driver app', src_disp: 'Dispatch', src_winston: 'Winston', src_system: 'Traffic service',
+    translated: 'translated · original {l}', show_orig: 'Show original', show_trans: 'Show translation',
+    not_translated: 'Free text · not translated in the prototype', from_winston: 'Suggested by Winston, approved',
+    winston_title: 'Winston · AI co-dispatcher',
+    w_idle: 'No open suggestions. Winston keeps checking the ETA of all active tours.',
+    w_thinking: 'Winston is checking the tour …', w_detected: 'Delay detected · {id}',
+    w_reason: 'ETA {eta} for {stop} is {m} min after the time window {win}.',
+    w_to_customer: 'To customer · email · German', w_to_driver: 'To driver · chat · translated automatically ({l})',
+    w_note: 'Nothing is sent until you approve.', approve: 'Approve & send', edit: 'Edit', apply: 'Apply', discard: 'Discard',
+    log_title: 'Log',
+    log_ok: '{t} · approved by Markus Reinhardt · email to {cust} and chat message to {drv} sent',
+    log_no: '{t} · discarded by Markus Reinhardt · nothing sent',
+    toast_received: 'reached dispatch after {s} s', toast_assigned: '{id} assigned to {drv}', toast_push: 'sent to the driver app',
+    toast_msg: 'New message from {drv}', toast_winston: 'Winston has a suggestion', toast_mail: 'Email sent to {cust}',
+    toast_jam: 'Traffic report: jam on the A9', toast_jam_no: 'The jam scenario only works while T-1042 is on the road.',
+    legend_active: 'on the road', legend_stop: 'at stop', legend_pause: 'break – no tracking', legend_jam: 'traffic jam', legend_note: 'schematic map',
+    depot: 'Depot', h_ABFAHRT: 'Departure', h_ANGEKOMMEN: 'Arrived', h_ENTLADEN: 'Unloaded', h_PAUSE: 'Break – tracking off',
+    h_WEITER: 'Resumed – tracking on', h_PROBLEM: 'Problem reported: {c}', h_BEENDET: 'Tour finished – tracking off', h_ZUGEWIESEN: 'assigned to {drv}',
+    h_STAU: 'Traffic jam reported on the A9', h_W_DETECTED: 'Delay detected, new ETA {eta}', h_W_APPROVED: 'Suggestion approved and sent', h_W_DISCARDED: 'Suggestion discarded',
+    c_jam: 'traffic jam', c_ramp: 'ramp occupied', c_breakdown: 'breakdown',
+    tab_tour: 'Tour', my_tour: 'My tour', next_stop_lbl: 'Next stop', current_stop: 'Current stop',
+    report: 'Report status – one tap is enough', b_depart: 'Depart', b_arrived: 'Arrived', b_unloaded: 'Unloaded', b_pause: 'Break',
+    b_resume: 'Resume', b_problem: 'Problem', b_finish: 'Finish tour',
+    gps_on: 'Tracking on – only during the tour', gps_pause: 'Break – tracking off', gps_off: 'Tracking off',
+    hint_pause: 'Your position is not shared during your break.', hint_active: 'Your position is only shared during the tour.',
+    stops_lbl: 'All stops', more_tours: 'More tours', sent: 'Reported', problem_q: 'What happened?', cancel: 'Cancel',
+    new_tour: 'New tour assigned: {id} · {route}', new_msg: 'New message from dispatch', tour_done: 'Tour completed. Safe trip home!',
+    dispatcher: 'Dispatcher'
+  },
+  pl: {
+    leitstand: 'Dyspozytornia', role_disp: 'Dyspozytor', language: 'Język',
+    kpi_active: 'Aktywne trasy', kpi_pause: 'Na przerwie', kpi_delay: 'Opóźnienia', kpi_ai: 'Otwarte propozycje',
+    tours_today: 'Dzisiejsze trasy', map: 'Mapa na żywo', map_hint: 'tylko kierowcy w trasie',
+    tab_stops: 'Punkty', tab_history: 'Historia', tab_chat: 'Czat', send: 'Wyślij', type_msg: 'Napisz wiadomość …',
+    st_planned: 'zaplanowana', st_assigned: 'przydzielona', st_active: 'w drodze', st_atstop: 'w punkcie dostawy',
+    st_paused: 'Przerwa · GPS wył.', st_done: 'zakończona', st_problem: 'Problem', late: 'Opóźnienie +{m} min',
+    driver: 'Kierowca', vehicle: 'Pojazd', unassigned: 'brak kierowcy', choose_driver: 'Wybierz kierowcę …', assign: 'Przydziel',
+    window: 'Okno czasowe {w}', eta: 'ETA {t}', arrived_at: 'przyjazd {t}', unloaded_at: 'rozładunek {t}', departed_at: 'wyjazd {t}',
+    open: 'oczekuje', pos_age: 'pozycja sprzed {s} s', pos_last: 'ostatnia pozycja {t}', pos_none: 'brak lokalizacji',
+    no_history: 'Brak zgłoszeń.', src_drv: 'Aplikacja kierowcy', src_disp: 'Dyspozytornia', src_winston: 'Winston', src_system: 'Serwis drogowy',
+    translated: 'przetłumaczono · oryginał {l}', show_orig: 'Pokaż oryginał', show_trans: 'Pokaż tłumaczenie',
+    not_translated: 'Tekst własny · w prototypie bez tłumaczenia', from_winston: 'Propozycja Winstona, zatwierdzona',
+    winston_title: 'Winston · współdyspozytor AI',
+    w_idle: 'Brak otwartych propozycji. Winston stale sprawdza ETA wszystkich aktywnych tras.',
+    w_thinking: 'Winston analizuje sytuację na trasie …', w_detected: 'Wykryto opóźnienie · {id}',
+    w_reason: 'ETA {eta} dla punktu {stop} jest {m} min po oknie czasowym {win}.',
+    w_to_customer: 'Do klienta · e-mail · niemiecki', w_to_driver: 'Do kierowcy · czat · tłumaczenie automatyczne ({l})',
+    w_note: 'Nic nie zostanie wysłane bez Twojej zgody.', approve: 'Zatwierdź i wyślij', edit: 'Edytuj', apply: 'Zastosuj', discard: 'Odrzuć',
+    log_title: 'Dziennik',
+    log_ok: '{t} · zatwierdził Markus Reinhardt · wysłano e-mail do: {cust} i wiadomość na czacie do: {drv}',
+    log_no: '{t} · odrzucił Markus Reinhardt · nic nie wysłano',
+    toast_received: 'w dyspozytorni po {s} s', toast_assigned: '{id} przydzielona · {drv}', toast_push: 'wysłano do aplikacji kierowcy',
+    toast_msg: 'Nowa wiadomość od: {drv}', toast_winston: 'Winston ma propozycję', toast_mail: 'Wysłano e-mail do: {cust}',
+    toast_jam: 'Komunikat drogowy: korek na A9', toast_jam_no: 'Scenariusz korka działa tylko, gdy T-1042 jest w drodze.',
+    legend_active: 'w drodze', legend_stop: 'w punkcie', legend_pause: 'przerwa – bez lokalizacji', legend_jam: 'korek', legend_note: 'mapa schematyczna',
+    depot: 'Baza', h_ABFAHRT: 'Wyjazd', h_ANGEKOMMEN: 'Na miejscu', h_ENTLADEN: 'Rozładowano', h_PAUSE: 'Przerwa – lokalizacja wyłączona',
+    h_WEITER: 'Jazda wznowiona – lokalizacja włączona', h_PROBLEM: 'Zgłoszono problem: {c}', h_BEENDET: 'Trasa zakończona – lokalizacja wyłączona', h_ZUGEWIESEN: 'przydzielono: {drv}',
+    h_STAU: 'Zgłoszono korek na A9', h_W_DETECTED: 'Wykryto opóźnienie, nowe ETA {eta}', h_W_APPROVED: 'Propozycja zatwierdzona i wysłana', h_W_DISCARDED: 'Propozycja odrzucona',
+    c_jam: 'korek', c_ramp: 'rampa zajęta', c_breakdown: 'awaria',
+    tab_tour: 'Trasa', my_tour: 'Moja trasa', next_stop_lbl: 'Następny punkt', current_stop: 'Bieżący punkt',
+    report: 'Zgłoś status – wystarczy jedno dotknięcie', b_depart: 'Wyjazd', b_arrived: 'Na miejscu', b_unloaded: 'Rozładowano', b_pause: 'Przerwa',
+    b_resume: 'Jadę dalej', b_problem: 'Problem', b_finish: 'Zakończ trasę',
+    gps_on: 'Lokalizacja włączona – tylko w trasie', gps_pause: 'Przerwa – lokalizacja wyłączona', gps_off: 'Lokalizacja wyłączona',
+    hint_pause: 'Podczas przerwy Twoja pozycja nie jest przesyłana.', hint_active: 'Twoja pozycja jest przesyłana tylko podczas trasy.',
+    stops_lbl: 'Wszystkie punkty', more_tours: 'Kolejne trasy', sent: 'Zgłoszono', problem_q: 'Co się stało?', cancel: 'Anuluj',
+    new_tour: 'Przydzielono nową trasę: {id} · {route}', new_msg: 'Nowa wiadomość od dyspozytora', tour_done: 'Trasa zakończona. Szerokiej drogi do domu!',
+    dispatcher: 'Dyspozytor'
+  }
+};
+
+/* Nachrichten-Vorlagen mit hinterlegter Übersetzung (simuliert den Übersetzungsdienst) */
+const PH = {
+  welcome: {
+    de: 'Guten Morgen Tomasz, deine Tour T-1042 ist fertig geplant. Erster Stopp Ingolstadt, Zeitfenster 09:00–10:00.',
+    en: 'Good morning Tomasz, your tour T-1042 is fully planned. First stop Ingolstadt, time window 09:00–10:00.',
+    pl: 'Dzień dobry Tomasz, Twoja trasa T-1042 jest już zaplanowana. Pierwszy punkt: Ingolstadt, okno czasowe 09:00–10:00.'
+  },
+  start_ok: {
+    de: 'Guten Morgen! Alles klar, ich fahre um 7:30 los.',
+    en: 'Good morning! All clear, I’m leaving at 7:30.',
+    pl: 'Dzień dobry! Wszystko jasne, wyjeżdżam o 7:30.'
+  },
+  ramp4: {
+    de: 'In Freising bitte an Rampe 4 entladen.',
+    en: 'In Freising, please unload at ramp 4.',
+    pl: 'We Freising proszę rozładować na rampie 4.'
+  },
+  photo: {
+    de: 'Bitte fotografiere nach dem Entladen den Lieferschein.',
+    en: 'Please take a photo of the delivery note after unloading.',
+    pl: 'Po rozładunku zrób proszę zdjęcie dokumentu dostawy.'
+  },
+  munich_time: {
+    de: 'Das Lager in München nimmt heute bis 13:30 Uhr an.',
+    en: 'The warehouse in Munich accepts deliveries until 1:30 pm today.',
+    pl: 'Magazyn w Monachium przyjmuje dziś towar do 13:30.'
+  },
+  report_status: {
+    de: 'Bitte kurz den Status melden, wenn du beim Kunden bist.',
+    en: 'Please report your status when you reach the customer.',
+    pl: 'Zgłoś proszę status, gdy dotrzesz do klienta.'
+  },
+  thanks: {
+    de: 'Danke dir, gute Fahrt!',
+    en: 'Thanks, drive safely!',
+    pl: 'Dzięki, szerokiej drogi!'
+  },
+  d_jam: {
+    de: 'Ich stehe im Stau auf der A9, das dauert länger.',
+    en: 'I’m stuck in a traffic jam on the A9, it will take longer.',
+    pl: 'Stoję w korku na A9, to potrwa dłużej.'
+  },
+  d_arrived: {
+    de: 'Ich bin beim Kunden angekommen.',
+    en: 'I’ve arrived at the customer.',
+    pl: 'Jestem już u klienta.'
+  },
+  d_ok: { de: 'Verstanden.', en: 'Understood.', pl: 'Zrozumiałem.' },
+  d_ramp: {
+    de: 'Die Rampe ist belegt, ich warte.',
+    en: 'The ramp is occupied, I’m waiting.',
+    pl: 'Rampa jest zajęta, czekam.'
+  },
+  d_breakdown: {
+    de: 'Ich habe eine Panne und melde mich gleich.',
+    en: 'I’ve broken down and will get back to you shortly.',
+    pl: 'Mam awarię, zaraz się odezwę.'
+  },
+  st_morning: {
+    de: 'Morgen Stefan, die Druckerei Kraus nimmt ab 11:30 Uhr an.',
+    en: 'Morning Stefan, Druckerei Kraus accepts deliveries from 11:30.',
+    pl: 'Dzień dobry Stefan, drukarnia Kraus przyjmuje towar od 11:30.'
+  },
+  st_pause: {
+    de: 'Ich mache jetzt 30 Minuten Pause auf dem Rastplatz.',
+    en: 'I’m taking a 30-minute break at the rest area now.',
+    pl: 'Robię teraz 30 minut przerwy na parkingu.'
+  },
+  mi_morning: {
+    de: 'Hallo Mihai, bitte in Regensburg beim Wareneingang an Tor 2 melden.',
+    en: 'Hi Mihai, please check in at goods receiving, gate 2, in Regensburg.',
+    pl: 'Cześć Mihai, w Regensburgu zgłoś się proszę do przyjęcia towaru przy bramie 2.'
+  },
+  mi_ok: {
+    de: 'Okay, Tor 2. Ich fahre jetzt in Nürnberg los.',
+    en: 'Okay, gate 2. Leaving Nuremberg now.',
+    pl: 'OK, brama 2. Wyjeżdżam teraz z Norymbergi.'
+  },
+  w_driver: {
+    de: 'Der Kunde in Freising ist informiert. Fahr bitte ohne Eile weiter – neue Ankunft ca. {eta} Uhr.',
+    en: 'The customer in Freising has been informed. Please continue without rushing – new arrival approx. {eta}.',
+    pl: 'Klient we Freising został poinformowany. Jedź spokojnie dalej – nowy przyjazd ok. {eta}.'
+  },
+  w_customer: {
+    de: 'Sehr geehrte Damen und Herren,\n\nunsere Lieferung an Sie (Tour T-1042) verspätet sich wegen eines Staus auf der A9. Neue voraussichtliche Ankunft: ca. {eta} Uhr.\n\nWir bitten um Ihr Verständnis.\nIhr Team von Bachmann Transporte'
+  }
+};
+
+/* =========================================================
+   2. Hilfsfunktionen
+   ========================================================= */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function t(lang, key, vars) {
+  let s = (L[lang] && L[lang][key] !== undefined) ? L[lang][key] : (L.de[key] !== undefined ? L.de[key] : key);
+  if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? vars[k] : m));
+  return s;
+}
+function phrase(key, lang, vars) {
+  const e = PH[key] || {};
+  let s = e[lang] !== undefined ? e[lang] : e.de;
+  if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? vars[k] : m));
+  return s;
+}
+const toMin = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+const fmt = m => { m = Math.round(m); const h = Math.floor(m / 60) % 24; const mm = ((m % 60) + 60) % 60; return String(h).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); };
+const icon = (id, cls = '') => `<svg class="${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
+const LANGS = ['de', 'en', 'pl'];
+
+/* =========================================================
+   3. Stammdaten (fiktiv)
+   ========================================================= */
+const DRIVERS = {
+  tn: { name: 'Tomasz Nowak', lang: 'pl', init: 'TN' },
+  sh: { name: 'Stefan Huber', lang: 'de', init: 'SH' },
+  mp: { name: 'Mihai Popescu', lang: 'en', init: 'MP' }
+};
+const PLACES = {
+  depot: { name: 'Depot Nürnberg-Hafen', city: 'Nürnberg', lat: 49.418, lon: 11.052 },
+  ing: { name: 'Hofmann Getränke GmbH', city: 'Ingolstadt', lat: 48.766, lon: 11.426 },
+  fre: { name: 'Baumarkt Seidl', city: 'Freising', lat: 48.401, lon: 11.749 },
+  muc: { name: 'Müller Logistik, Lager Nord', city: 'München', lat: 48.19, lon: 11.585 },
+  wue: { name: 'Druckerei Kraus', city: 'Würzburg', lat: 49.792, lon: 9.953 },
+  rgb: { name: 'Elektro Wagner', city: 'Regensburg', lat: 49.013, lon: 12.101 },
+  bam: { name: 'Möbelhaus Brandt', city: 'Bamberg', lat: 49.898, lon: 10.902 }
+};
+const START_MIN = toMin('10:40');
+const now0 = Date.now();
+
+const tours = [
+  {
+    id: 'T-1042', drv: 'tn', veh: 'N-FC 1042', started: true, done: false, paused: false, phase: 'drive', next: 2, seg: 0.30, unloaded: false,
+    jam: false, jamEta: null, auto: false, pushed: true, problem: null, posAt: now0,
+    stops: [
+      { p: 'depot', dep: '07:32' },
+      { p: 'ing', win: ['09:00', '10:00'], arr: '09:05', unl: '09:58', dep: '10:25', via: [[49.24, 11.25], [48.93, 11.43]], dur: 80 },
+      { p: 'fre', win: ['11:00', '12:00'], via: [[48.55, 11.60], [48.46, 11.66]], dur: 50 },
+      { p: 'muc', win: ['12:30', '13:30'], via: [[48.28, 11.66]], dur: 35 }
+    ],
+    hist: [
+      { t: toMin('07:32'), c: 'ABFAHRT', src: 'drv' }, { t: toMin('09:05'), c: 'ANGEKOMMEN', src: 'drv' },
+      { t: toMin('09:58'), c: 'ENTLADEN', src: 'drv' }, { t: toMin('10:25'), c: 'ABFAHRT', src: 'drv' }
+    ]
+  },
+  {
+    id: 'T-1043', drv: 'sh', veh: 'N-FC 1043', started: true, done: false, paused: true, pausedAt: toMin('10:31'), pauseLen: 30,
+    phase: 'drive', next: 1, seg: 0.62, unloaded: false, jam: false, auto: true, problem: null, posAt: now0 - 9 * 60 * 1000,
+    stops: [
+      { p: 'depot', dep: '09:40' },
+      { p: 'wue', win: ['11:30', '12:30'], via: [[49.60, 10.62], [49.73, 10.18]], dur: 80 }
+    ],
+    hist: [{ t: toMin('09:40'), c: 'ABFAHRT', src: 'drv' }, { t: toMin('10:31'), c: 'PAUSE', src: 'drv' }]
+  },
+  {
+    id: 'T-1044', drv: 'mp', veh: 'N-FC 1044', started: true, done: false, paused: false, phase: 'drive', next: 1, seg: 0.47, unloaded: false,
+    jam: false, auto: true, problem: null, posAt: now0,
+    stops: [
+      { p: 'depot', dep: '10:05' },
+      { p: 'rgb', win: ['11:30', '12:30'], via: [[49.28, 11.46]], dur: 75 }
+    ],
+    hist: [{ t: toMin('10:05'), c: 'ABFAHRT', src: 'drv' }]
+  },
+  {
+    id: 'T-1045', drv: null, veh: 'N-FC 1045', started: false, done: false, paused: false, phase: 'drive', next: 1, seg: 0, unloaded: false,
+    jam: false, auto: false, pushed: false, problem: null, posAt: now0,
+    stops: [
+      { p: 'depot' },
+      { p: 'bam', win: ['14:00', '15:00'], via: [[49.60, 10.99]], dur: 50 }
+    ],
+    hist: []
+  }
+];
+const tour = id => tours.find(x => x.id === id);
+
+const state = {
+  simSec: START_MIN * 60, tick: 0,
+  langLs: 'de', langApp: 'pl', view: 'both',
+  sel: 'T-1042', lsTab: 'stops', appTab: 'tour',
+  appUnread: false, winThinking: false, pending: new Set(),
+  proposals: [], wlog: [], msgs: [], lsHoldUntil: 0,
+  sig: {}
+};
+const now = () => state.simSec / 60;
+let msgId = 0, propId = 0;
+function seedMsg(tourId, from, key, lang, time) {
+  state.msgs.push({ id: ++msgId, tour: tourId, from, key, lang, time: toMin(time), delivered: true, seenLs: true, origLs: false, origApp: false });
+}
+seedMsg('T-1042', 'disp', 'welcome', 'de', '07:12');
+seedMsg('T-1042', 'drv', 'start_ok', 'pl', '07:14');
+seedMsg('T-1043', 'disp', 'st_morning', 'de', '07:05');
+seedMsg('T-1043', 'drv', 'st_pause', 'de', '10:31');
+seedMsg('T-1044', 'disp', 'mi_morning', 'de', '07:20');
+seedMsg('T-1044', 'drv', 'mi_ok', 'en', '10:04');
+
+/* =========================================================
+   4. Fachlogik: Status, ETA, Verspätung
+   ========================================================= */
+function statusOf(tr) {
+  if (tr.done) return 'done';
+  if (!tr.started) return tr.drv ? 'assigned' : 'planned';
+  if (tr.paused) return 'paused';
+  return tr.phase === 'stop' ? 'atstop' : 'active';
+}
+/* Ortung nur während aktiver Tour: nicht geplant, nicht pausiert, nicht beendet (NFA-02) */
+const trackingOn = tr => tr.started && !tr.paused && !tr.done;
+
+function etaOf(tr, i) {
+  if (!tr.started || tr.done || i < tr.next) return null;
+  let t0 = now();
+  if (tr.paused) t0 = Math.max(now(), tr.pausedAt + (tr.pauseLen || 30));
+  let nextEta;
+  if (tr.phase === 'drive') {
+    nextEta = (tr.jam && tr.jamEta !== null) ? Math.max(tr.jamEta, t0) : t0 + (1 - tr.seg) * tr.stops[tr.next].dur;
+    if (i === tr.next) return nextEta;
+  } else if (i === tr.next) {
+    return null;
+  }
+  let cur = tr.phase === 'drive' ? nextEta + 30 : t0 + (tr.unloaded ? 0 : 30);
+  for (let k = tr.next + 1; k <= i; k++) {
+    cur += tr.stops[k].dur;
+    if (k < i) cur += 30;
+  }
+  return cur;
+}
+function lateOf(tr, i) {
+  const s = tr.stops[i];
+  if (!s || !s.win) return 0;
+  if (s.arr) return Math.max(0, toMin(s.arr) - toMin(s.win[1]));
+  const e = etaOf(tr, i);
+  return e === null ? 0 : Math.max(0, Math.round(e - toMin(s.win[1])));
+}
+const tourLate = tr => (tr.started && !tr.done) ? lateOf(tr, tr.next) : 0;
+
+function allowed(tr) {
+  const last = tr.stops.length - 1;
+  if (tr.done) return {};
+  if (!tr.started) return { ABFAHRT: true };
+  if (tr.paused) return { WEITER: true, PROBLEM: true };
+  if (tr.phase === 'drive') return { ANGEKOMMEN: true, PAUSE: true, PROBLEM: true };
+  if (!tr.unloaded) return { ENTLADEN: true, PAUSE: true, PROBLEM: true };
+  return tr.next < last ? { ABFAHRT: true, PAUSE: true, PROBLEM: true } : { BEENDET: true, PAUSE: true, PROBLEM: true };
+}
+
+function addHist(tr, c, vars, src) {
+  tr.hist.push({ t: now(), c, vars: vars || {}, src, fresh: true });
+}
+
+/* Statusmeldung verarbeiten – source 'app' = Tipp von Tomasz, 'auto' = simulierte Fahrer */
+function applyStatus(tr, code, vars, source) {
+  const s = tr.stops[tr.next];
+  const nowStr = fmt(now());
+  switch (code) {
+    case 'ABFAHRT':
+      if (!tr.started) { tr.started = true; tr.stops[0].dep = nowStr; tr.next = 1; tr.seg = 0; tr.phase = 'drive'; }
+      else { s.dep = nowStr; tr.next += 1; tr.seg = 0; tr.phase = 'drive'; tr.unloaded = false; }
+      tr.posAt = Date.now();
+      break;
+    case 'ANGEKOMMEN':
+      tr.phase = 'stop'; tr.seg = 1; tr.unloaded = false; s.arr = nowStr; tr.jam = false; tr.jamEta = null; tr.posAt = Date.now();
+      break;
+    case 'ENTLADEN': tr.unloaded = true; s.unl = nowStr; break;
+    case 'PAUSE': tr.paused = true; tr.pausedAt = now(); tr.pauseLen = 30; break;
+    case 'WEITER': tr.paused = false; tr.pausedAt = null; tr.posAt = Date.now(); break;
+    case 'PROBLEM': tr.problem = vars.c; break;
+    case 'BEENDET': tr.done = true; s.dep = nowStr; break;
+  }
+  if (code !== 'PROBLEM') tr.problem = null;
+  addHist(tr, code, code === 'PROBLEM' ? { c: vars.c } : {}, 'drv');
+
+  const drvName = DRIVERS[tr.drv].name;
+  if (source === 'app') {
+    renderApp();
+    appToast(t(state.langApp, 'sent') + ' · ' + nowStr);
+    const delay = 400 + Math.round(Math.random() * 500);
+    state.lsHoldUntil = Date.now() + delay;
+    setTimeout(() => {
+      renderLs();
+      lsToast(`${drvName}: ${histText(tr.hist[tr.hist.length - 1], state.langLs)}`, t(state.langLs, 'toast_received', { s: (delay / 1000).toFixed(1).replace('.', state.langLs === 'en' ? '.' : ',') }));
+    }, delay);
+  } else {
+    renderAll();
+    lsToast(`${drvName}: ${histText(tr.hist[tr.hist.length - 1], state.langLs)}`, tr.id);
+  }
+}
+
+function histText(h, lang) {
+  const vars = Object.assign({}, h.vars);
+  if (h.c === 'PROBLEM' && vars.c) vars.c = t(lang, 'c_' + vars.c);
+  return t(lang, 'h_' + h.c, vars);
+}
+
+/* =========================================================
+   5. Karte (schematisch, Region Nordbayern–München)
+   ========================================================= */
+const B = { minLon: 9.72, maxLon: 12.38, minLat: 47.98, maxLat: 50.06 };
+const KX = 72.5, KY = 111.2, SC = 2.4;
+const MW = (B.maxLon - B.minLon) * KX * SC, MH = (B.maxLat - B.minLat) * KY * SC;
+const xy = (lat, lon) => [(lon - B.minLon) * KX * SC, (B.maxLat - lat) * KY * SC];
+const COLORS = { active: '#1b873b', atstop: '#1565c0', paused: '#8a95a5', late: '#c62828', ai: '#6246c1' };
+const CITIES = [
+  ['Würzburg', 49.792, 9.953], ['Bamberg', 49.898, 10.902], ['Nürnberg', 49.452, 11.077], ['Regensburg', 49.013, 12.101],
+  ['Ingolstadt', 48.766, 11.426], ['Freising', 48.401, 11.749], ['München', 48.137, 11.575], ['Augsburg', 48.371, 10.898], ['Landshut', 48.537, 12.152]
+];
+const ROADS = [
+  { n: 'A9', pts: [[49.452, 11.077], [49.24, 11.25], [48.93, 11.43], [48.766, 11.426], [48.55, 11.60], [48.42, 11.63], [48.19, 11.585]], sh: [49.10, 11.34] },
+  { n: 'A3', pts: [[49.792, 9.953], [49.73, 10.18], [49.60, 10.62], [49.452, 11.077], [49.28, 11.46], [49.013, 12.101]], sh: [49.53, 10.85] },
+  { n: 'A73', pts: [[49.452, 11.077], [49.60, 10.99], [49.898, 10.902]], sh: [49.74, 10.94] },
+  { n: 'A8', pts: [[48.371, 10.898], [48.137, 11.575]], sh: [48.27, 11.20] },
+  { n: 'A92', pts: [[48.19, 11.585], [48.28, 11.66], [48.401, 11.749], [48.537, 12.152]], sh: [48.48, 11.98] }
+];
+const RIVERS = [
+  { n: 'Main', pts: [[50.06, 9.72], [49.98, 9.80], [49.86, 9.90], [49.79, 9.93], [49.70, 10.02], [49.73, 10.16], [49.84, 10.23], [49.93, 10.40], [49.99, 10.62], [50.06, 10.82]], lab: [49.95, 9.76] },
+  { n: 'Donau', pts: [[48.45, 9.72], [48.60, 10.30], [48.72, 10.78], [48.73, 11.18], [48.76, 11.43], [48.90, 11.88], [49.02, 12.10], [48.92, 12.38]], lab: [48.66, 10.45] },
+  { n: 'Isar', pts: [[47.98, 11.50], [48.137, 11.575], [48.25, 11.66], [48.401, 11.749], [48.54, 12.15], [48.62, 12.38]], lab: [48.05, 11.56] }
+];
+const ptsStr = pts => pts.map(([la, lo]) => xy(la, lo).map(v => v.toFixed(1)).join(',')).join(' ');
+
+function segPoints(tr, i) {
+  const a = PLACES[tr.stops[i - 1].p], b = PLACES[tr.stops[i].p];
+  return [[a.lat, a.lon], ...(tr.stops[i].via || []), [b.lat, b.lon]].map(([la, lo]) => xy(la, lo));
+}
+function along(pts, f) {
+  const lens = []; let total = 0;
+  for (let k = 1; k < pts.length; k++) { const d = Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); lens.push(d); total += d; }
+  let target = Math.max(0, Math.min(1, f)) * total;
+  for (let k = 1; k < pts.length; k++) {
+    if (target <= lens[k - 1] || k === pts.length - 1) {
+      const r = lens[k - 1] ? Math.min(1, target / lens[k - 1]) : 0;
+      return [pts[k - 1][0] + (pts[k][0] - pts[k - 1][0]) * r, pts[k - 1][1] + (pts[k][1] - pts[k - 1][1]) * r];
+    }
+    target -= lens[k - 1];
+  }
+  return pts[pts.length - 1];
+}
+function posOf(tr) {
+  if (tr.phase === 'stop') { const s = PLACES[tr.stops[tr.next].p]; return xy(s.lat, s.lon); }
+  return along(segPoints(tr, tr.next), tr.seg);
+}
+
+function renderMapBase() {
+  const svg = $('#map');
+  svg.setAttribute('viewBox', `0 0 ${MW.toFixed(0)} ${MH.toFixed(0)}`);
+  let g = `<rect width="${MW.toFixed(0)}" height="${MH.toFixed(0)}" fill="#eef3ef"/>`;
+  for (const r of RIVERS) {
+    g += `<polyline points="${ptsStr(r.pts)}" fill="none" stroke="#b9d6ee" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const [lx, ly] = xy(r.lab[0], r.lab[1]);
+    g += `<text class="river-label" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}">${r.n}</text>`;
+  }
+  for (const r of ROADS) g += `<polyline points="${ptsStr(r.pts)}" fill="none" stroke="#c5ccd4" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
+  for (const r of ROADS) g += `<polyline points="${ptsStr(r.pts)}" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  g += '<g id="routeLayer"></g><g id="jamLayer"></g>';
+  for (const r of ROADS) {
+    const [x, y] = xy(r.sh[0], r.sh[1]);
+    const w = r.n.length > 2 ? 26 : 22;
+    g += `<g transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><rect x="${-w / 2}" y="-7" width="${w}" height="14" rx="3" fill="#1f5aa6"/><text class="road-shield" text-anchor="middle" y="3.3">${r.n}</text></g>`;
+  }
+  for (const [name, la, lo] of CITIES) {
+    const [x, y] = xy(la, lo);
+    const right = x + 8 + name.length * 6.5 > MW;
+    g += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.2" fill="#5a6776"/><text class="city-label" text-anchor="${right ? 'end' : 'start'}" x="${(right ? x - 6 : x + 6).toFixed(1)}" y="${(y - 5).toFixed(1)}">${name}</text>`;
+  }
+  g += '<g id="stopLayer"></g><g id="markerLayer"></g>';
+  svg.innerHTML = g;
+}
+
+function renderMapDynamic() {
+  const lang = state.langLs;
+  const sel = tour(state.sel);
+  // Route und Stopps der ausgewählten Tour
+  let route = '', stopsG = '';
+  if (sel) {
+    for (let i = 1; i < sel.stops.length; i++) {
+      const pts = segPoints(sel, i);
+      const done = sel.started && (i < sel.next || (i === sel.next && sel.phase === 'stop'));
+      route += `<polyline points="${pts.map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="${done ? '#8fa3b8' : '#1565c0'}" stroke-width="3" stroke-opacity="${done ? .7 : .55}" ${done ? '' : 'stroke-dasharray="7 5"'} stroke-linecap="round" stroke-linejoin="round"/>`;
+    }
+    sel.stops.forEach((s, i) => {
+      const pl = PLACES[s.p]; const [x, y] = xy(pl.lat, pl.lon);
+      const isDone = i === 0 ? sel.started : !!s.unl || (i < sel.next);
+      stopsG += `<g transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><rect x="-8" y="-8" width="16" height="16" rx="4" fill="${isDone ? '#8fa3b8' : '#ffffff'}" stroke="#1565c0" stroke-width="2"/><text text-anchor="middle" y="4" style="font:700 10px var(--font);fill:${isDone ? '#fff' : '#1565c0'}">${i === 0 ? 'D' : i}</text></g>`;
+    });
+  }
+  $('#routeLayer').innerHTML = route;
+  $('#stopLayer').innerHTML = stopsG;
+
+  // Stau
+  const j = tour('T-1042');
+  let jam = '';
+  if (j.jam && j.phase === 'drive') {
+    const pts = segPoints(j, j.next);
+    const samples = [];
+    for (let k = 0; k <= 8; k++) samples.push(along(pts, Math.min(1, j.seg + 0.05 + k * 0.03)));
+    jam += `<polyline points="${samples.map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="#c62828" stroke-width="6" stroke-dasharray="4 3" stroke-linecap="round"/>`;
+    const m = samples[4];
+    jam += `<g transform="translate(${(m[0] + 22).toFixed(1)},${(m[1]).toFixed(1)})"><rect x="-4" y="-10" width="64" height="20" rx="10" fill="#c62828"/><text x="28" y="4" text-anchor="middle" style="font:700 11px var(--font);fill:#fff">${esc(t(lang, 'legend_jam'))} A9</text></g>`;
+  }
+  $('#jamLayer').innerHTML = jam;
+
+  // Marker: nur gestartete, nicht beendete Touren
+  let mk = '';
+  for (const tr of tours) {
+    if (!tr.started || tr.done) continue;
+    const st = statusOf(tr);
+    const color = st === 'paused' ? COLORS.paused : (tourLate(tr) > 0 ? COLORS.late : (st === 'atstop' ? COLORS.atstop : COLORS.active));
+    const [x, y] = posOf(tr);
+    const isSel = tr.id === state.sel;
+    const label = `${DRIVERS[tr.drv].name} · ${t(lang, 'st_' + st)}`;
+    mk += `<g class="marker" data-tour="${tr.id}" id="mk-${tr.id}" transform="translate(${x.toFixed(1)},${y.toFixed(1)})" tabindex="0" role="button" aria-label="${esc(tr.id + ', ' + label)}">`;
+    if (st === 'active') mk += `<circle class="pulse" r="13" fill="${color}"/>`;
+    mk += `<circle class="dot" r="12" fill="${color}" stroke="#fff" stroke-width="3"/>`;
+    mk += st === 'paused'
+      ? `<rect x="-4.5" y="-5" width="3" height="10" fill="#fff"/><rect x="1.5" y="-5" width="3" height="10" fill="#fff"/>`
+      : `<text text-anchor="middle" y="3.5" style="font:700 9px var(--font);fill:#fff">${DRIVERS[tr.drv].init}</text>`;
+    if (isSel) {
+      mk += `<g class="mk-label" data-x="${x.toFixed(1)}"><rect x="18" y="-11" width="120" height="22" rx="6" fill="#0f1b2a" opacity=".9"/><text class="map-label" x="26" y="4" style="fill:#fff">${esc(label)}</text></g>`;
+    }
+    mk += '</g>';
+  }
+  $('#markerLayer').innerHTML = mk;
+  $$('#markerLayer .mk-label').forEach(lbl => {
+    const txt = $('text', lbl), rect = $('rect', lbl);
+    let w = 120;
+    try { w = txt.getComputedTextLength() + 16; } catch (err) { /* ohne Layout (z. B. Vorschau) Standardbreite */ }
+    const x = Number(lbl.dataset.x);
+    const flip = x + 18 + w > MW;
+    const lx = flip ? -18 - w : 18;
+    rect.setAttribute('width', w.toFixed(1)); rect.setAttribute('x', lx.toFixed(1));
+    txt.setAttribute('x', (lx + 8).toFixed(1));
+  });
+}
+function updateMarkerPositions() {
+  for (const tr of tours) {
+    if (!tr.started || tr.done) continue;
+    const el = document.getElementById('mk-' + tr.id);
+    if (!el) continue;
+    const [x, y] = posOf(tr);
+    el.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)})`);
+  }
+}
+function renderLegend() {
+  const lang = state.langLs;
+  $('#mapLegend').innerHTML =
+    `<span><i style="background:${COLORS.active}"></i>${esc(t(lang, 'legend_active'))}</span>` +
+    `<span><i style="background:${COLORS.atstop}"></i>${esc(t(lang, 'legend_stop'))}</span>` +
+    `<span><i style="background:${COLORS.paused}"></i>${esc(t(lang, 'legend_pause'))}</span>` +
+    `<span><i style="background:${COLORS.late}"></i>${esc(t(lang, 'legend_jam'))} / ${esc(t(lang, 'kpi_delay'))}</span>` +
+    `<span style="margin-left:auto">${esc(t(lang, 'legend_note'))}</span>`;
+}
+
+/* =========================================================
+   6. Leitstand
+   ========================================================= */
+function pill(tr, lang) {
+  const st = statusOf(tr);
+  let h = `<span class="pill ${st}">${esc(t(lang, 'st_' + st))}</span>`;
+  const late = tourLate(tr);
+  if (late > 0) h += ` <span class="pill late nodot">${esc(t(lang, 'late', { m: late }))}</span>`;
+  if (tr.problem) h += ` <span class="pill problem nodot">${esc(t(lang, 'st_problem'))}: ${esc(t(lang, 'c_' + tr.problem))}</span>`;
+  return h;
+}
+const routeStr = tr => tr.stops.map(s => PLACES[s.p].city).filter((c, i, a) => a.indexOf(c) === i).join(' → ');
+
+function renderLsLabels() {
+  const lang = state.langLs;
+  $$('[data-i18n-ls]').forEach(el => { el.textContent = t(lang, el.dataset.i18nLs); });
+  $('#lsInput').placeholder = t(lang, 'type_msg');
+  $('.leitstand').setAttribute('lang', lang);
+  renderLegend();
+}
+
+let lastKpi = {};
+function renderKpis() {
+  const lang = state.langLs;
+  const k = {
+    active: tours.filter(x => x.started && !x.done).length,
+    pause: tours.filter(x => x.started && !x.done && x.paused).length,
+    late: tours.filter(x => tourLate(x) > 0).length,
+    ai: state.proposals.filter(p => p.state === 'open').length
+  };
+  $('#kpis').innerHTML =
+    `<div class="kpi ${lastKpi.active !== undefined && lastKpi.active !== k.active ? 'flash' : ''}"><div class="v">${k.active}</div><div class="l">${esc(t(lang, 'kpi_active'))}</div></div>` +
+    `<div class="kpi ${lastKpi.pause !== undefined && lastKpi.pause !== k.pause ? 'flash' : ''}"><div class="v">${k.pause}</div><div class="l">${esc(t(lang, 'kpi_pause'))}</div></div>` +
+    `<div class="kpi late ${lastKpi.late !== undefined && lastKpi.late !== k.late ? 'flash' : ''}"><div class="v">${k.late}</div><div class="l">${esc(t(lang, 'kpi_delay'))}</div></div>` +
+    `<div class="kpi ai ${lastKpi.ai !== undefined && lastKpi.ai !== k.ai ? 'flash' : ''}"><div class="v">${k.ai}</div><div class="l">${esc(t(lang, 'kpi_ai'))}</div></div>`;
+  lastKpi = k;
+}
+
+function renderTourList() {
+  const lang = state.langLs;
+  $('#tourList').innerHTML = tours.map(tr => {
+    const unread = state.msgs.some(m => m.tour === tr.id && m.from === 'drv' && m.delivered && !m.seenLs);
+    const who = tr.drv ? `${esc(DRIVERS[tr.drv].name)} <span style="color:var(--muted)">(${DRIVERS[tr.drv].lang.toUpperCase()})</span>` : `<span style="color:var(--muted)">${esc(t(lang, 'unassigned'))}</span>`;
+    const assign = !tr.drv ? `<div class="assign"><select data-assign="${tr.id}" aria-label="${esc(t(lang, 'choose_driver'))}"><option value="">${esc(t(lang, 'choose_driver'))}</option>${Object.entries(DRIVERS).map(([k, d]) => `<option value="${k}">${esc(d.name)}</option>`).join('')}</select><button type="button" class="btn primary" data-assign-btn="${tr.id}">${esc(t(lang, 'assign'))}</button></div>` : '';
+    return `<div class="tour" role="button" tabindex="0" data-select="${tr.id}" aria-current="${tr.id === state.sel}">
+      <div class="row"><span class="id">${tr.id}</span>${pill(tr, lang)}${unread ? `<span class="badge-count" title="Chat">•</span>` : ''}</div>
+      <div class="route">${esc(routeStr(tr))}</div>
+      <div class="who">${who}</div>${assign}</div>`;
+  }).join('');
+}
+
+function renderDetail() {
+  const lang = state.langLs;
+  const tr = tour(state.sel);
+  const drv = tr.drv ? DRIVERS[tr.drv] : null;
+  $('#detailHead').innerHTML = `<div class="t"><b>${tr.id}</b>${pill(tr, lang)}</div>
+    <div class="meta"><span>${esc(t(lang, 'driver'))}: ${drv ? esc(drv.name) + ' (' + drv.lang.toUpperCase() + ')' : esc(t(lang, 'unassigned'))}</span><span>${esc(t(lang, 'vehicle'))}: ${tr.veh}</span><span id="posAge"></span></div>`;
+  updatePosAge();
+  $$('#lsTabs [data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === state.lsTab)));
+  $('#lsStops').hidden = state.lsTab !== 'stops';
+  $('#lsHistory').hidden = state.lsTab !== 'history';
+  $('#lsChat').hidden = state.lsTab !== 'chat';
+  renderStops();
+  renderHistory();
+  if (state.lsTab === 'chat') { state.msgs.forEach(m => { if (m.tour === tr.id && m.delivered) m.seenLs = true; }); }
+  renderLsChat();
+  const unread = state.msgs.filter(m => m.tour === tr.id && m.from === 'drv' && m.delivered && !m.seenLs).length;
+  $('#lsUnread').hidden = unread === 0;
+  $('#lsUnread').textContent = unread;
+}
+function updatePosAge() {
+  const el = $('#posAge'); if (!el) return;
+  const tr = tour(state.sel); const lang = state.langLs;
+  if (!tr.started || tr.done) { el.textContent = t(lang, 'pos_none'); return; }
+  if (tr.paused) { el.textContent = t(lang, 'pos_last', { t: fmt(tr.pausedAt) }) + ' · ' + t(lang, 'gps_pause'); return; }
+  el.textContent = t(lang, 'pos_age', { s: Math.max(0, Math.floor((Date.now() - tr.posAt) / 1000)) });
+}
+function renderStops() {
+  const lang = state.langLs; const tr = tour(state.sel);
+  $('#lsStops').innerHTML = `<ol class="stops">${tr.stops.map((s, i) => {
+    const pl = PLACES[s.p];
+    const isNext = tr.started && !tr.done && i === tr.next;
+    const done = i === 0 ? tr.started : (!!s.dep || (tr.done && i === tr.stops.length - 1) || (i < tr.next));
+    const parts = [`<span>${esc(pl.city)}</span>`];
+    if (s.win) parts.push(`<span>${esc(t(lang, 'window', { w: s.win[0] + '–' + s.win[1] }))}</span>`);
+    if (s.arr) parts.push(`<span>${esc(t(lang, 'arrived_at', { t: s.arr }))}</span>`);
+    if (s.unl) parts.push(`<span>${esc(t(lang, 'unloaded_at', { t: s.unl }))}</span>`);
+    if (i === 0 && s.dep) parts.push(`<span>${esc(t(lang, 'departed_at', { t: s.dep }))}</span>`);
+    if (!s.arr && i > 0) {
+      const e = etaOf(tr, i); const late = lateOf(tr, i);
+      if (e !== null) parts.push(`<span class="${late > 0 ? 'late' : ''}">${esc(t(lang, 'eta', { t: fmt(e) }))}${late > 0 ? ' · +' + late + ' min' : ''}</span>`);
+      else if (!tr.started) parts.push(`<span>${esc(t(lang, 'open'))}</span>`);
+    }
+    return `<li class="stop ${done ? 'done' : ''} ${isNext ? 'next' : ''}"><span class="n">${i === 0 ? 'D' : i}</span><div><div class="name">${esc(i === 0 ? pl.name : pl.name)}</div><div class="sub">${parts.join('')}</div></div></li>`;
+  }).join('')}</ol>`;
+}
+function renderHistory() {
+  const lang = state.langLs; const tr = tour(state.sel);
+  const items = tr.hist.slice().reverse();
+  $('#lsHistory').innerHTML = items.length ? `<ul class="history">${items.map(h => {
+    const cls = h.fresh ? 'new' : ''; h.fresh = false;
+    return `<li class="${cls}"><time>${fmt(h.t)}</time><div>${esc(histText(h, lang))}<div class="src">${esc(t(lang, 'src_' + h.src))}</div></div></li>`;
+  }).join('')}</ul>` : `<p style="color:var(--muted);margin:0">${esc(t(lang, 'no_history'))}</p>`;
+}
+
+/* Chat (Leitstand und App teilen sich die Darstellung) */
+function msgHtml(m, side) {
+  const lang = side === 'ls' ? state.langLs : state.langApp;
+  const mine = side === 'ls' ? m.from === 'disp' : m.from === 'drv';
+  const origKey = side === 'ls' ? 'origLs' : 'origApp';
+  let text, meta = [fmt(m.time)];
+  if (m.key) {
+    const translated = m.lang !== lang;
+    text = phrase(m.key, m[origKey] && translated ? m.lang : lang, m.vars);
+    if (translated) {
+      meta.push(esc(t(lang, 'translated', { l: m.lang.toUpperCase() })));
+      meta.push(`<button type="button" class="linkbtn" data-orig="${m.id}" data-side="${side}">${esc(t(lang, m[origKey] ? 'show_trans' : 'show_orig'))}</button>`);
+    }
+  } else {
+    text = m.text;
+    if (m.lang !== lang) meta.push(esc(t(lang, 'not_translated')));
+  }
+  if (m.ai) meta.push(`<span style="color:var(--ai);font-weight:600">${esc(t(lang, 'from_winston'))}</span>`);
+  if (!mine && side === 'app') meta.unshift(esc(t(lang, 'dispatcher')));
+  return `<div class="msg ${mine ? 'me' : 'them'} ${m.ai ? 'ai' : ''}"><div class="bubble" lang="${m[origKey] ? m.lang : lang}">${esc(text)}</div><div class="meta">${meta.join(' · ')}</div></div>`;
+}
+function renderLsChat() {
+  const tr = tour(state.sel); const lang = state.langLs;
+  const box = $('#lsMessages');
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 30;
+  box.innerHTML = state.msgs.filter(m => m.tour === tr.id && (m.from === 'disp' || m.delivered)).map(m => msgHtml(m, 'ls')).join('');
+  if (atBottom || state.forceLsScroll) box.scrollTop = box.scrollHeight;
+  state.forceLsScroll = false;
+  const keys = tr.id === 'T-1042' ? ['ramp4', 'photo', 'munich_time', 'thanks'] : ['report_status', 'thanks'];
+  $('#lsQuick').innerHTML = tr.drv ? keys.map(k => `<button type="button" class="chip" data-quick-ls="${k}">${esc(phrase(k, lang))}</button>`).join('') : '';
+  $('#lsInput').disabled = !tr.drv;
+}
+function sendFromLs(payload) {
+  const tr = tour(state.sel);
+  if (!tr.drv) return;
+  const m = Object.assign({ id: ++msgId, tour: tr.id, from: 'disp', lang: state.langLs, time: now(), delivered: false, seenLs: true, origLs: false, origApp: false }, payload);
+  state.msgs.push(m);
+  state.forceLsScroll = true;
+  renderLsChat();
+  setTimeout(() => {
+    m.delivered = true;
+    if (tr.drv === 'tn') {
+      if (state.appTab !== 'chat') { state.appUnread = true; appBanner(t(state.langApp, 'new_msg'), 'chat'); }
+      renderAppChat(true); renderAppTabs();
+    }
+  }, 500 + Math.round(Math.random() * 400));
+}
+
+/* Winston */
+function renderWinston() {
+  const lang = state.langLs;
+  const open = state.proposals.filter(p => p.state === 'open');
+  let h = '';
+  if (state.winThinking) h += `<div class="w-thinking"><span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>${esc(t(lang, 'w_thinking'))}</div>`;
+  if (!open.length && !state.winThinking) h += `<div class="w-idle">${icon('i-spark')}<span>${esc(t(lang, 'w_idle'))}</span></div>`;
+  for (const p of open) {
+    const tr = tour(p.tourId); const s = tr.stops[p.stopIdx]; const pl = PLACES[s.p];
+    const drvLang = DRIVERS[tr.drv].lang;
+    const drvText = p.drvText !== null ? p.drvText : phrase('w_driver', lang, { eta: fmt(p.eta) });
+    h += `<div class="proposal" data-pid="${p.id}">
+      <div class="ph">${icon('i-alert')}${esc(t(lang, 'w_detected', { id: tr.id }))}</div>
+      <div class="reason">${esc(t(lang, 'w_reason', { eta: fmt(p.eta), stop: pl.name + ', ' + pl.city, m: p.late, win: s.win[0] + '–' + s.win[1] }))}</div>
+      <div class="p-item"><div class="p-to">${esc(t(lang, 'w_to_customer'))}</div>${p.editing ? `<textarea data-field="cust" aria-label="E-Mail">${esc(p.custText)}</textarea>` : `<div class="p-text">${esc(p.custText)}</div>`}</div>
+      <div class="p-item"><div class="p-to">${esc(t(lang, 'w_to_driver', { l: drvLang.toUpperCase() }))}</div>${p.editing ? `<textarea data-field="drv" aria-label="Chat">${esc(drvText)}</textarea>` : `<div class="p-text">${esc(drvText)}</div>`}</div>
+      <div class="p-note">${icon('i-lock')}${esc(t(lang, 'w_note'))}</div>
+      <div class="p-actions">
+        <button type="button" class="btn ai" data-wact="approve">${icon('i-check')}${esc(t(lang, 'approve'))}</button>
+        <button type="button" class="btn" data-wact="${p.editing ? 'apply' : 'edit'}">${esc(t(lang, p.editing ? 'apply' : 'edit'))}</button>
+        <button type="button" class="btn ghost" data-wact="discard">${esc(t(lang, 'discard'))}</button>
+      </div></div>`;
+  }
+  if (state.wlog.length) {
+    h += `<div class="p-to" style="color:var(--muted)">${esc(t(lang, 'log_title'))}</div><ul class="w-log">${state.wlog.map(e =>
+      `<li>${e.ok ? icon('i-check', 'ok') : icon('i-x', 'no')}<span>${esc(t(lang, e.ok ? 'log_ok' : 'log_no', { t: fmt(e.t), cust: e.cust, drv: e.drv }))}</span></li>`).join('')}</ul>`;
+  }
+  $('#winston').innerHTML = h;
+}
+function winstonCheck() {
+  for (const tr of tours) {
+    if (!tr.started || tr.done || tr.phase !== 'drive') continue;
+    const s = tr.stops[tr.next]; if (!s.win) continue;
+    const key = tr.id + ':' + tr.next;
+    const late = lateOf(tr, tr.next);
+    if (late > 15 && !state.pending.has(key)) {
+      state.pending.add(key);
+      state.winThinking = true; renderWinston();
+      setTimeout(() => {
+        state.winThinking = false;
+        if (tr.phase !== 'drive' || tr.done) { renderWinston(); return; }
+        const eta = etaOf(tr, tr.next);
+        const p = { id: ++propId, tourId: tr.id, stopIdx: tr.next, eta, late: lateOf(tr, tr.next), state: 'open', editing: false,
+          custText: phrase('w_customer', 'de', { eta: fmt(eta) }), drvText: null, drvLang: null };
+        state.proposals.push(p);
+        addHist(tr, 'W_DETECTED', { eta: fmt(eta) }, 'winston');
+        renderLs();
+        lsToast(t(state.langLs, 'toast_winston'), `${tr.id} · ${PLACES[s.p].name}, ${PLACES[s.p].city}`);
+      }, 1800);
+    }
+  }
+}
+function readEdits(p) {
+  const box = $(`.proposal[data-pid="${p.id}"]`); if (!box) return;
+  const c = $('textarea[data-field="cust"]', box), d = $('textarea[data-field="drv"]', box);
+  if (c) p.custText = c.value;
+  if (d) {
+    const tpl = phrase('w_driver', state.langLs, { eta: fmt(p.eta) });
+    if (d.value.trim() !== tpl) { p.drvText = d.value.trim(); p.drvLang = state.langLs; }
+  }
+}
+function winstonAction(pid, act) {
+  const p = state.proposals.find(x => x.id === pid); if (!p || p.state !== 'open') return;
+  const tr = tour(p.tourId); const pl = PLACES[tr.stops[p.stopIdx].p];
+  if (act === 'edit') { p.editing = true; renderWinston(); const ta = $(`.proposal[data-pid="${p.id}"] textarea`); if (ta) ta.focus(); return; }
+  if (act === 'apply') { readEdits(p); p.editing = false; renderWinston(); return; }
+  if (act === 'approve') {
+    if (p.editing) readEdits(p);
+    p.state = 'approved';
+    state.wlog.unshift({ ok: true, t: now(), cust: pl.name, drv: DRIVERS[tr.drv].name });
+    addHist(tr, 'W_APPROVED', {}, 'disp');
+    const prev = state.sel; state.sel = tr.id;
+    sendFromLs(p.drvText !== null ? { text: p.drvText, lang: p.drvLang, ai: true } : { key: 'w_driver', vars: { eta: fmt(p.eta) }, lang: state.langLs, ai: true });
+    state.sel = prev;
+    lsToast(t(state.langLs, 'toast_mail', { cust: pl.name }), tr.id);
+  }
+  if (act === 'discard') {
+    p.state = 'discarded';
+    state.wlog.unshift({ ok: false, t: now() });
+    addHist(tr, 'W_DISCARDED', {}, 'disp');
+  }
+  renderLs();
+}
+
+function renderLs() {
+  renderKpis(); renderTourList(); renderDetail(); renderWinston(); renderMapDynamic();
+  $('#btnJam').disabled = !(tour('T-1042').phase === 'drive' && !tour('T-1042').jam && !tour('T-1042').done && !tour('T-1042').paused);
+}
+
+function lsToast(title, small) {
+  const d = document.createElement('div');
+  d.innerHTML = `${esc(title)}${small ? `<small>${esc(small)}</small>` : ''}`;
+  $('#lsToast').appendChild(d);
+  setTimeout(() => d.remove(), 4100);
+}
+
+/* =========================================================
+   7. Fahrer-App (Tomasz Nowak)
+   ========================================================= */
+const appTours = () => tours.filter(x => x.drv === 'tn' && (x.id === 'T-1042' || x.pushed));
+function appCurrent() { const list = appTours(); return list.find(x => !x.done) || list[list.length - 1]; }
+
+function renderAppLabels() {
+  const lang = state.langApp;
+  $$('[data-i18n-app]').forEach(el => { el.textContent = t(lang, el.dataset.i18nApp); });
+  $('#appInput').placeholder = t(lang, 'type_msg');
+  $('#appSend').textContent = t(lang, 'send');
+  $('#screen').setAttribute('lang', lang);
+}
+function renderAppHead() {
+  const lang = state.langApp; const tr = appCurrent();
+  const on = trackingOn(tr);
+  $('#gps').classList.toggle('off', !on);
+  $('#gpsText').textContent = on ? t(lang, 'gps_on') : (tr.paused ? t(lang, 'gps_pause') : t(lang, 'gps_off'));
+}
+function sbtn(code, cls, ic, label, enabled) {
+  return `<button type="button" class="sbtn ${cls}" data-status="${code}" ${enabled ? '' : 'disabled'}>${icon(ic)}<span>${esc(label)}</span></button>`;
+}
+function renderAppTour() {
+  const lang = state.langApp; const tr = appCurrent(); const al = allowed(tr);
+  const more = appTours().filter(x => x !== tr && !x.done);
+  let h = '<div class="app-pad">';
+  if (tr.done && !more.length) {
+    h += `<div class="a-card done-card">${icon('i-check')}<div class="big">${esc(t(lang, 'tour_done'))}</div><div class="kv" style="justify-content:center">${tr.id} · ${esc(routeStr(tr))}</div></div>`;
+  } else {
+    const s = tr.stops[tr.next]; const pl = PLACES[s.p];
+    const late = tourLate(tr);
+    h += `<div class="a-card"><div class="lbl">${esc(t(lang, 'my_tour'))} · ${tr.id} · ${tr.veh}</div><div>${pill(tr, lang)}</div></div>`;
+    h += `<div class="a-card"><div class="lbl">${esc(t(lang, tr.phase === 'stop' && tr.started ? 'current_stop' : 'next_stop_lbl'))}</div>
+      <div class="big">${esc(pl.name)}</div>
+      <div class="kv"><span><b>${esc(pl.city)}</b></span>${s.win ? `<span>${esc(t(lang, 'window', { w: s.win[0] + '–' + s.win[1] }))}</span>` : ''}<span data-app-eta class="${late > 0 ? 'late' : ''}"></span></div></div>`;
+    h += `<div class="a-card"><div class="lbl">${esc(t(lang, 'report'))}</div><div class="status-grid">
+      ${sbtn('ABFAHRT', 'go', 'i-play', t(lang, 'b_depart'), al.ABFAHRT)}
+      ${sbtn('ANGEKOMMEN', 'arrive', 'i-pin', t(lang, 'b_arrived'), al.ANGEKOMMEN)}
+      ${sbtn('ENTLADEN', 'unload', 'i-box', t(lang, 'b_unloaded'), al.ENTLADEN)}
+      ${tr.paused ? sbtn('WEITER', 'resume', 'i-play', t(lang, 'b_resume'), al.WEITER) : sbtn('PAUSE', 'pause', 'i-pause', t(lang, 'b_pause'), al.PAUSE)}
+      ${sbtn('PROBLEM', 'problem', 'i-alert', t(lang, 'b_problem'), al.PROBLEM)}
+      ${sbtn('BEENDET', 'finish', 'i-flag', t(lang, 'b_finish'), al.BEENDET)}
+      </div><div class="a-hint">${icon('i-lock')}<span>${esc(t(lang, tr.paused ? 'hint_pause' : 'hint_active'))}</span></div></div>`;
+    h += `<div class="a-card"><div class="lbl">${esc(t(lang, 'stops_lbl'))}</div><ol class="a-stops">${tr.stops.map((st, i) => {
+      if (i === 0) return '';
+      const p2 = PLACES[st.p]; const done = !!st.unl && (i < tr.next || tr.done || (i === tr.next && tr.unloaded));
+      const isNext = i === tr.next && !tr.done;
+      return `<li class="${done ? 'done' : ''} ${isNext && !done ? 'next' : ''}"><span class="n">${done ? '✓' : i}</span><div>${esc(p2.name)}<small>${esc(p2.city)} · ${st.win[0]}–${st.win[1]}</small></div></li>`;
+    }).join('')}</ol></div>`;
+  }
+  if (more.length) {
+    h += `<div class="a-card"><div class="lbl">${esc(t(lang, 'more_tours'))}</div>${more.map(x => `<div><b>${x.id}</b> · ${esc(routeStr(x))}<div class="kv"><span>${esc(t(lang, 'window', { w: x.stops[1].win[0] + '–' + x.stops[1].win[1] }))}</span></div></div>`).join('')}</div>`;
+  }
+  h += '</div>';
+  $('#appTour').innerHTML = h;
+  updateAppEta();
+}
+function updateAppEta() {
+  const el = $('[data-app-eta]'); if (!el) return;
+  const tr = appCurrent(); const lang = state.langApp;
+  const e = etaOf(tr, tr.next); const late = tourLate(tr);
+  el.textContent = e !== null ? t(lang, 'eta', { t: fmt(e) }) + (late > 0 ? ' · ' + t(lang, 'late', { m: late }) : '') : '';
+  el.className = late > 0 ? 'late' : '';
+}
+function renderAppChat(forceScroll) {
+  const box = $('#appMessages');
+  const ids = appTours().map(x => x.id);
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 30;
+  box.innerHTML = state.msgs.filter(m => ids.includes(m.tour) && (m.from === 'drv' || m.delivered)).sort((a, b) => a.time - b.time || a.id - b.id).map(m => msgHtml(m, 'app')).join('');
+  if (atBottom || forceScroll) box.scrollTop = box.scrollHeight;
+  $('#appQuick').innerHTML = ['d_jam', 'd_arrived', 'd_ok', 'd_ramp'].map(k => `<button type="button" class="chip" data-quick-app="${k}">${esc(phrase(k, state.langApp))}</button>`).join('');
+}
+function renderAppTabs() {
+  $$('.app-tabs [data-atab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.atab === state.appTab)));
+  $('#appTour').hidden = state.appTab !== 'tour';
+  $('#appChat').hidden = state.appTab !== 'chat';
+  $('#appUnread').hidden = !state.appUnread;
+}
+function renderApp() {
+  renderAppLabels(); renderAppHead(); renderAppTour(); renderAppChat(); renderAppTabs();
+}
+function sendFromApp(payload) {
+  const tr = appCurrent();
+  const m = Object.assign({ id: ++msgId, tour: tr.id, from: 'drv', lang: state.langApp, time: now(), delivered: false, seenLs: false, origLs: false, origApp: false }, payload);
+  state.msgs.push(m);
+  renderAppChat(true);
+  setTimeout(() => {
+    m.delivered = true;
+    if (state.sel === tr.id && state.lsTab === 'chat') { m.seenLs = true; state.forceLsScroll = true; }
+    else lsToast(t(state.langLs, 'toast_msg', { drv: DRIVERS[tr.drv].name }), tr.id);
+    renderTourList(); renderDetail();
+  }, 500 + Math.round(Math.random() * 400));
+}
+function appToast(text) {
+  const host = $('#appToastHost');
+  host.innerHTML = `<div class="app-toast" role="status">${icon('i-check')}${esc(text)}</div>`;
+  clearTimeout(appToast.tm); appToast.tm = setTimeout(() => { host.innerHTML = ''; }, 2600);
+}
+function appBanner(text, target) {
+  const b = $('#appBanner');
+  b.innerHTML = `${icon('i-bell')}<span>${esc(text)}</span>`;
+  b.dataset.target = target || '';
+  b.hidden = false;
+  clearTimeout(appBanner.tm); appBanner.tm = setTimeout(() => { b.hidden = true; }, 6000);
+}
+function openProblemSheet() {
+  const lang = state.langApp;
+  const sh = $('#sheet');
+  sh.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(t(lang, 'problem_q'))}">
+    <h4>${esc(t(lang, 'problem_q'))}</h4>
+    <button type="button" class="opt" data-problem="jam">${icon('i-jam')}${esc(t(lang, 'c_jam').replace(/^./, c => c.toUpperCase()))}</button>
+    <button type="button" class="opt" data-problem="ramp">${icon('i-box')}${esc(t(lang, 'c_ramp').replace(/^./, c => c.toUpperCase()))}</button>
+    <button type="button" class="opt" data-problem="breakdown">${icon('i-wrench')}${esc(t(lang, 'c_breakdown').replace(/^./, c => c.toUpperCase()))}</button>
+    <button type="button" class="btn" data-problem="">${esc(t(lang, 'cancel'))}</button></div>`;
+  sh.hidden = false;
+  $('.opt', sh).focus();
+}
+
+/* =========================================================
+   8. Szenario Stau
+   ========================================================= */
+function triggerJam() {
+  const tr = tour('T-1042');
+  if (tr.phase !== 'drive' || tr.jam || tr.done || tr.paused) { lsToast(t(state.langLs, 'toast_jam_no')); return; }
+  const eta = etaOf(tr, tr.next);
+  tr.jam = true; tr.jamEta = eta + 65;
+  addHist(tr, 'STAU', {}, 'system');
+  lsToast(t(state.langLs, 'toast_jam'), 'T-1042 · A9');
+  renderLs(); renderApp();
+  winstonCheck();
+}
+
+/* =========================================================
+   9. Bedienung
+   ========================================================= */
+function renderLangSwitches() {
+  $$('.lang[data-side]').forEach(box => {
+    const side = box.dataset.side; const cur = side === 'ls' ? state.langLs : state.langApp;
+    $('.opts', box).innerHTML = LANGS.map(l => `<button type="button" data-lang="${l}" aria-pressed="${l === cur}">${l.toUpperCase()}</button>`).join('');
+  });
+}
+function renderAll() {
+  renderLangSwitches(); renderLsLabels(); renderLs(); renderApp(); updateClock();
+}
+function updateClock() {
+  const s = fmt(now());
+  $('#lsClock').textContent = s; $('#appClock').textContent = s;
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('button, [data-select], .marker, #appBanner');
+  if (!el) return;
+
+  if (el.matches('.seg [data-view]')) {
+    state.view = el.dataset.view; $('#stage').dataset.view = state.view;
+    $$('.seg [data-view]').forEach(b => b.setAttribute('aria-pressed', String(b === el)));
+    return;
+  }
+  if (el.id === 'btnJam') { triggerJam(); return; }
+  if (el.id === 'btnReset') { location.reload(); return; }
+
+  if (el.matches('[data-lang]')) {
+    const side = el.closest('.lang').dataset.side;
+    if (side === 'ls') state.langLs = el.dataset.lang; else state.langApp = el.dataset.lang;
+    renderAll();
+    return;
+  }
+  if (el.matches('[data-assign-btn]')) {
+    const id = el.dataset.assignBtn; const sel = $(`select[data-assign="${id}"]`);
+    if (!sel || !sel.value) { sel && sel.focus(); return; }
+    const tr = tour(id); tr.drv = sel.value;
+    addHist(tr, 'ZUGEWIESEN', { drv: DRIVERS[tr.drv].name }, 'disp');
+    state.sel = id;
+    renderLs();
+    lsToast(t(state.langLs, 'toast_assigned', { id, drv: DRIVERS[tr.drv].name }), t(state.langLs, 'toast_push'));
+    if (tr.drv === 'tn') setTimeout(() => { tr.pushed = true; appBanner(t(state.langApp, 'new_tour', { id, route: routeStr(tr) }), 'tour'); renderApp(); }, 700);
+    return;
+  }
+  if (el.matches('[data-select]')) {
+    if (e.target.closest('.assign')) return;
+    state.sel = el.dataset.select; renderLs(); return;
+  }
+  if (el.matches('.marker')) { state.sel = el.dataset.tour; renderLs(); return; }
+  if (el.matches('#lsTabs [data-tab]')) { state.lsTab = el.dataset.tab; state.forceLsScroll = true; renderDetail(); renderTourList(); return; }
+  if (el.matches('[data-quick-ls]')) { sendFromLs({ key: el.dataset.quickLs }); return; }
+  if (el.matches('[data-orig]')) {
+    const m = state.msgs.find(x => x.id === Number(el.dataset.orig)); const side = el.dataset.side;
+    if (side === 'ls') { m.origLs = !m.origLs; renderLsChat(); } else { m.origApp = !m.origApp; renderAppChat(); }
+    return;
+  }
+  if (el.matches('[data-wact]')) { winstonAction(Number(el.closest('.proposal').dataset.pid), el.dataset.wact); return; }
+
+  // App
+  if (el.matches('[data-status]')) {
+    const code = el.dataset.status; const tr = appCurrent();
+    if (code === 'PROBLEM') { openProblemSheet(); return; }
+    applyStatus(tr, code, {}, 'app');
+    return;
+  }
+  if (el.matches('[data-problem]')) {
+    const c = el.dataset.problem; $('#sheet').hidden = true;
+    if (!c) return;
+    const tr = appCurrent();
+    applyStatus(tr, 'PROBLEM', { c }, 'app');
+    sendFromApp({ key: { jam: 'd_jam', ramp: 'd_ramp', breakdown: 'd_breakdown' }[c] });
+    if (c === 'jam' && tr.id === 'T-1042' && tr.phase === 'drive' && !tr.jam) setTimeout(triggerJam, 900);
+    return;
+  }
+  if (el.matches('[data-atab]')) {
+    state.appTab = el.dataset.atab;
+    if (state.appTab === 'chat') state.appUnread = false;
+    renderAppTabs(); if (state.appTab === 'chat') renderAppChat(true);
+    return;
+  }
+  if (el.matches('[data-quick-app]')) { sendFromApp({ key: el.dataset.quickApp }); return; }
+  if (el.id === 'appBanner') {
+    el.hidden = true;
+    if (el.dataset.target === 'chat') { state.appTab = 'chat'; state.appUnread = false; renderAppTabs(); renderAppChat(true); }
+    else { state.appTab = 'tour'; renderAppTabs(); }
+  }
+});
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.marker, [data-select]')) { e.preventDefault(); e.target.click(); }
+  if (e.key === 'Escape' && !$('#sheet').hidden) $('#sheet').hidden = true;
+});
+$('#sheet').addEventListener('click', e => { if (e.target.id === 'sheet') $('#sheet').hidden = true; });
+$('#lsForm').addEventListener('submit', e => {
+  e.preventDefault(); const v = $('#lsInput').value.trim(); if (!v) return;
+  $('#lsInput').value = ''; sendFromLs({ text: v });
+});
+$('#appForm').addEventListener('submit', e => {
+  e.preventDefault(); const v = $('#appInput').value.trim(); if (!v) return;
+  $('#appInput').value = ''; sendFromApp({ text: v });
+});
+
+/* =========================================================
+   10. Simulation (1 Sekunde = 12 Sekunden Tourzeit)
+   ========================================================= */
+function signature() {
+  return JSON.stringify(tours.map(x => [statusOf(x), x.next, x.unloaded, x.drv, tourLate(x) > 0, x.problem, x.jam]));
+}
+function tick() {
+  state.simSec += 12; state.tick += 1;
+  const dm = 12 / 60;
+  for (const tr of tours) {
+    if (!tr.started || tr.done) continue;
+    if (tr.paused) {
+      if (tr.auto && now() >= tr.pausedAt + tr.pauseLen) applyStatus(tr, 'WEITER', {}, 'auto');
+      continue;
+    }
+    if (tr.phase === 'drive') {
+      const speed = tr.jam ? 0.1 : 1;
+      tr.seg = Math.min(tr.auto ? 1 : 0.985, tr.seg + dm / tr.stops[tr.next].dur * speed);
+      if (state.tick % 5 === 0) tr.posAt = Date.now();
+      if (tr.auto && tr.seg >= 1) applyStatus(tr, 'ANGEKOMMEN', {}, 'auto');
+    } else if (tr.auto) {
+      const s = tr.stops[tr.next];
+      if (!tr.unloaded && now() >= toMin(s.arr) + 25) applyStatus(tr, 'ENTLADEN', {}, 'auto');
+      else if (tr.unloaded && now() >= toMin(s.unl) + 5) applyStatus(tr, tr.next < tr.stops.length - 1 ? 'ABFAHRT' : 'BEENDET', {}, 'auto');
+    }
+  }
+  updateClock();
+  updateMarkerPositions();
+  updatePosAge();
+  updateAppEta();
+  winstonCheck();
+  const sig = signature();
+  if (sig !== state.sig.last && Date.now() >= state.lsHoldUntil) {
+    state.sig.last = sig;
+    renderKpis(); renderTourList(); renderMapDynamic(); renderAppHead();
+    const head = $('#detailHead'); if (head) renderDetail();
+    renderAppTour();
+  } else if (state.tick % 5 === 0 && state.lsTab === 'stops') {
+    renderStops();
+  }
+}
+
+renderMapBase();
+renderAll();
+state.sig.last = signature();
+setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>

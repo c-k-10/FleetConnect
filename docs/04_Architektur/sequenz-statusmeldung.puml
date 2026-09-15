@@ -1,0 +1,70 @@
+@startuml sequenz-statusmeldung
+' FleetConnect – Sequenzdiagramm Statusmeldung
+' Ablauf vom Tipp in der Fahrer-App bis zum Disponenten-Dashboard
+' Stand 15.09.2026
+
+title FleetConnect – Statusmeldung bis zum Disponenten-Dashboard
+
+skinparam shadowing false
+skinparam sequenceMessageAlign left
+autonumber
+
+actor "Fahrer" as F
+participant "Fahrer-App" as App
+participant "Backend (API)" as API
+database "Datenbank" as DB
+participant "Winston (KI)" as W
+participant "Leitstand\n(Dashboard)" as L
+actor "Disponent" as D
+
+== Statusmeldung „Angekommen“ ==
+
+F -> App : tippt „Angekommen“
+App -> API : POST /touren/{tourId}/statusmeldungen\nart = ANGEKOMMEN, stoppId, zeitpunkt
+activate API
+API -> API : Anmeldung, Rolle und Tourzuordnung prüfen
+API -> DB : Statusmeldung speichern
+DB --> API : gespeichert
+API -> DB : Stopp als erreicht markieren
+API --> App : 201 Created
+App --> F : Bestätigung „Gemeldet“
+API -> L : Push über WebSocket: neue Statusmeldung
+L --> D : Status und Karte aktualisiert\n(unter 3 s nach dem Tipp, NFA-01)
+
+API -> W : Tourlage prüfen
+activate W
+W -> DB : Tourplan und letzte Positionen lesen
+DB --> W : Daten
+W -> W : ETA der nächsten Stopps berechnen
+
+alt ETA überschreitet Zeitfenster um mehr als 15 Minuten
+  W -> DB : KIVorschlag speichern (offen)
+  W -> L : Push: neuer Vorschlag
+  L --> D : Entwurf mit „Freigeben“, „Bearbeiten“, „Verwerfen“
+  note right of W
+    Winston sendet nichts selbst.
+    Versand erst nach Freigabe (NFA-03)
+  end note
+else im Zeitfenster
+  W --> API : kein Handlungsbedarf
+end
+deactivate W
+deactivate API
+
+== Sonderfall „Pause“ ==
+
+F -> App : tippt „Pause“
+App -> App : Ortung stoppen
+App -> API : POST /touren/{tourId}/statusmeldungen\nart = PAUSE
+activate API
+API -> DB : Statusmeldung speichern, Tour.status = PAUSIERT
+API -> L : Push: „Pause – Ortung aus“
+deactivate API
+L --> D : Marker zeigt „Pause – Ortung aus“
+
+note over App, API
+  Solange die Tour pausiert ist,
+  werden keine Positionen übermittelt (NFA-02).
+end note
+
+@enduml

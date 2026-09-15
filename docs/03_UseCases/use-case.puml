@@ -1,0 +1,63 @@
+@startuml use-case
+' FleetConnect – Use-Case-Diagramm
+' 14 Use Cases, 4 Akteure (Fahrer, Disponent, Admin, Winston)
+' Stand 15.09.2026
+
+title FleetConnect – Use-Case-Diagramm
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #EEF4FB
+  BorderColor #2F5D8A
+}
+
+actor "Fahrer" as Fahrer
+actor "Admin" as Admin
+actor "Disponent" as Disponent
+actor "Winston\n(KI-Akteur)" as Winston
+
+rectangle "FleetConnect" {
+  usecase "UC01\nAnmelden" as UC01
+  usecase "UC02\nTour planen" as UC02
+  usecase "UC03\nTour zuweisen" as UC03
+  usecase "UC04\nTour anzeigen" as UC04
+  usecase "UC05\nStatus melden" as UC05
+  usecase "UC06\nPosition übermitteln\n(nur während aktiver Tour)" as UC06
+  usecase "UC07\nLive-Karte verfolgen" as UC07
+  usecase "UC08\nNachricht senden" as UC08
+  usecase "UC09\nNachricht übersetzen" as UC09
+  usecase "UC10\nAblieferung dokumentieren\n(Foto, Unterschrift)" as UC10
+  usecase "UC11\nVerspätung erkennen" as UC11
+  usecase "UC12\nBenutzer verwalten" as UC12
+  usecase "UC13\nNachricht entwerfen" as UC13
+  usecase "UC14\nVorschlag freigeben\n(ohne Freigabe kein Versand)" as UC14
+}
+
+' Fahrer und Admin links
+Fahrer --> UC01
+Fahrer --> UC04
+Fahrer --> UC05
+Fahrer --> UC06
+Fahrer --> UC08
+Fahrer --> UC10
+Admin --> UC01
+Admin --> UC12
+
+' Disponent und Winston rechts
+UC01 <-- Disponent
+UC02 <-- Disponent
+UC03 <-- Disponent
+UC07 <-- Disponent
+UC08 <-- Disponent
+UC14 <-- Disponent
+UC11 <-- Winston
+UC13 <-- Winston
+
+' Beziehungen zwischen Use Cases
+UC08 ..> UC09 : <<include>>
+UC08 <.. UC14 : <<include>>
+UC11 ..> UC13 : <<include>>
+
+@enduml

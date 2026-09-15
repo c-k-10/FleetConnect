@@ -1,0 +1,175 @@
+@startuml klassendiagramm
+' FleetConnect – Klassendiagramm
+' 11 Klassen, 4 Enums
+' Stand 15.09.2026
+
+title FleetConnect – Klassendiagramm
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #2F5D8A
+  ArrowColor #2F5D8A
+}
+hide empty members
+
+enum Rolle {
+  FAHRER
+  DISPONENT
+  ADMIN
+}
+
+enum Sprache {
+  DE
+  EN
+  PL
+}
+
+enum TourStatus {
+  GEPLANT
+  ZUGEWIESEN
+  AKTIV
+  PAUSIERT
+  ABGESCHLOSSEN
+}
+
+enum Meldungsart {
+  ABFAHRT
+  ANGEKOMMEN
+  ENTLADEN
+  PAUSE
+  PROBLEM
+  TOUR_BEENDET
+}
+
+class Spedition {
+  - id : int
+  - name : String
+  - standardsprache : Sprache
+}
+
+class Benutzer {
+  - id : int
+  - name : String
+  - email : String
+  - passwortHash : String
+  - rolle : Rolle
+  - sprache : Sprache
+  - aktiv : boolean
+  + anmelden(email : String, passwort : String) : boolean
+  + deaktivieren() : void
+}
+
+class Fahrzeug {
+  - id : int
+  - kennzeichen : String
+  - bezeichnung : String
+}
+
+class Tour {
+  - id : int
+  - bezeichnung : String
+  - datum : Date
+  - status : TourStatus
+  + zuweisen(fahrer : Benutzer, fahrzeug : Fahrzeug) : void
+  + starten() : void
+  + pausieren() : void
+  + fortsetzen() : void
+  + abschliessen() : void
+  + ortungErlaubt() : boolean
+}
+
+class Stopp {
+  - id : int
+  - reihenfolge : int
+  - adresse : String
+  - zeitfensterVon : DateTime
+  - zeitfensterBis : DateTime
+  - eta : DateTime
+  - erledigt : boolean
+  + verspaetungInMinuten() : int
+}
+
+class Statusmeldung {
+  - id : int
+  - art : Meldungsart
+  - zeitpunkt : DateTime
+  - kommentar : String
+}
+
+class Position {
+  - id : int
+  - breitengrad : double
+  - laengengrad : double
+  - zeitpunkt : DateTime
+}
+
+class Nachricht {
+  - id : int
+  - text : String
+  - originalsprache : Sprache
+  - zeitpunkt : DateTime
+  - gelesen : boolean
+  + uebersetzen(ziel : Sprache) : Uebersetzung
+}
+
+class Uebersetzung {
+  - id : int
+  - zielsprache : Sprache
+  - text : String
+}
+
+class Dokument {
+  - id : int
+  - typ : String
+  - dateipfad : String
+  - zeitpunkt : DateTime
+}
+
+class KIVorschlag {
+  - id : int
+  - anlass : String
+  - entwurf : String
+  - erstelltAm : DateTime
+  - freigegebenAm : DateTime [0..1]
+  - abgelehnt : boolean
+  + freigeben(disponent : Benutzer) : Nachricht
+  + ablehnen(disponent : Benutzer) : void
+}
+
+Spedition "1" -- "*" Benutzer : beschäftigt >
+Spedition "1" -- "*" Fahrzeug : besitzt >
+Spedition "1" -- "*" Tour : plant >
+
+Benutzer "1" -- "*" Tour : disponiert >
+Benutzer "0..1" -- "*" Tour : fährt >
+Fahrzeug "0..1" -- "*" Tour : eingesetzt in >
+
+Tour "1" *-- "1..*" Stopp : enthält >
+Tour "1" *-- "*" Statusmeldung
+Tour "1" *-- "*" Position
+Tour "1" *-- "*" Nachricht : Chat >
+
+Benutzer "1" -- "*" Statusmeldung : meldet >
+Statusmeldung "*" -- "0..1" Stopp : betrifft >
+Benutzer "1" -- "*" Nachricht : sendet >
+Nachricht "1" *-- "*" Uebersetzung
+Stopp "1" *-- "*" Dokument : Ablieferung >
+
+Tour "1" -- "*" KIVorschlag : betrifft <
+KIVorschlag "0..1" -- "0..1" Nachricht : erzeugt nach Freigabe >
+Benutzer "0..1" -- "*" KIVorschlag : gibt frei >
+
+note right of KIVorschlag
+  Eine Nachricht entsteht erst
+  mit freigeben().
+  Ohne Freigabe kein Versand (NFA-03).
+end note
+
+note left of Position
+  Nur gespeichert, wenn
+  Tour.status = AKTIV (NFA-02)
+end note
+
+@enduml
